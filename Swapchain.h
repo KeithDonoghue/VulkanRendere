@@ -1,9 +1,12 @@
 #include "vulkan/vulkan.h"
 
+#include "VulkanDevice.h"
+#include "WindowsWindow.h"
+
 class Swapchain{
 public:
-	Swapchain(VkDevice, VkSurfaceKHR);
-	Swapchain(VkDevice, VkSurfaceKHR, VkSwapchainCreateInfoKHR);
+	Swapchain(VulkanDevice*, EngineWindow*);
+	Swapchain(VulkanDevice*, EngineWindow*, VkSwapchainCreateInfoKHR);
 	~Swapchain();
 
 private:
@@ -11,8 +14,8 @@ private:
 
 private:
 	VkSwapchainCreateInfoKHR mCreateInfo;
-	VkDevice mDevice;
-	VkSurfaceKHR mSurface;
+	VulkanDevice * mDevice;
+	EngineWindow * mWindow;
 
 	VkSwapchainKHR theVulkanSwapchain;
 };

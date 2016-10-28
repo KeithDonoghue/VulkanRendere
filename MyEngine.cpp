@@ -483,7 +483,7 @@ void MyEngine::DumpSurfaceInfoToFile()
 void MyEngine::CreateSwapchain()
 {
 
-	m_TheSwapchain = new Swapchain(m_TheVulkanDevice->GetVkDevice(), m_TheWindow->GetSurface());
+	m_TheSwapchain = new Swapchain(m_TheVulkanDevice, m_TheWindow);
 }
 
 

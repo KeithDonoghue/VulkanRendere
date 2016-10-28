@@ -1,14 +1,15 @@
 #include "Swapchain.h"
 
+
 #define ENGINE_LOGGING_ENABLED 1 
 #include "EngineLogging.h"
 
 
 #include "Windows.h"
 
-Swapchain::Swapchain(VkDevice theDevice, VkSurfaceKHR theSurface):
+Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 	mDevice(theDevice),
-	mSurface(theSurface)
+	mWindow(theWindow)
 { 
 
 	VkExtent2D WindowSize;
@@ -21,7 +22,7 @@ Swapchain::Swapchain(VkDevice theDevice, VkSurfaceKHR theSurface):
 	mCreateInfo.sType				= VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	mCreateInfo.pNext				= nullptr;
 	//mCreateInfo.flags				= 0; reserved for future use.
-	mCreateInfo.surface				= theSurface;
+	mCreateInfo.surface				= NULL; // assigned in init.
 	mCreateInfo.minImageCount		= 2;
 	mCreateInfo.imageFormat			= VK_FORMAT_B8G8R8A8_UNORM;
 	mCreateInfo.imageColorSpace		= VK_COLORSPACE_SRGB_NONLINEAR_KHR;
@@ -44,9 +45,9 @@ Swapchain::Swapchain(VkDevice theDevice, VkSurfaceKHR theSurface):
 
 
 
-Swapchain::Swapchain(VkDevice theDevice, VkSurfaceKHR theSurface, VkSwapchainCreateInfoKHR theCreateInfo):
+Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow, VkSwapchainCreateInfoKHR theCreateInfo):
 	mDevice(theDevice),
-	mSurface(theSurface),
+	mWindow(theWindow),
 	mCreateInfo(theCreateInfo)
 {
 	init();
@@ -57,7 +58,7 @@ Swapchain::Swapchain(VkDevice theDevice, VkSurfaceKHR theSurface, VkSwapchainCre
 
 Swapchain::~Swapchain()
 {
-	vkDestroySwapchainKHR(mDevice, theVulkanSwapchain, nullptr);
+	vkDestroySwapchainKHR(mDevice->GetVkDevice(), theVulkanSwapchain, nullptr);
 }
 
 
@@ -65,7 +66,10 @@ Swapchain::~Swapchain()
 void Swapchain::init()
 {
 
-	VkResult result = vkCreateSwapchainKHR(mDevice, &mCreateInfo, nullptr, &theVulkanSwapchain);
+
+	mCreateInfo.surface = mWindow->GetSurface();
+
+	VkResult result = vkCreateSwapchainKHR(mDevice->GetVkDevice(), &mCreateInfo, nullptr, &theVulkanSwapchain);
 
 	if (result != VK_SUCCESS)
 	{

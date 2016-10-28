@@ -1,3 +1,6 @@
+#ifndef WINDOWS_WINDOW_H
+#define WINDOWS_WINDOW_H 1
+
 #include <Windows.h>
 #define VK_USE_PLATFORM_WIN32_KHR 1
 #pragma comment(linker, "/subsystem:windows")
@@ -31,3 +34,4 @@ private:
 	VkInstance		m_InstanceForSurface;
 	VkSurfaceKHR	m_TheVulkanPresentSurface;
 };
+#endif WINDOWS_WINDOW_H

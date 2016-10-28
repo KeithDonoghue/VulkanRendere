@@ -1,4 +1,6 @@
 #include "Vulkan/Vulkan.h"
+#ifndef VULKAN_DEVICE_H
+#define VULKAN_DEVICE_H 1
 
 #ifdef _WIN32
 #define ERR_EXIT(err_msg, err_class)                                           \
@@ -54,3 +56,4 @@ private:
 	PFN_vkAcquireNextImageKHR fpAcquireNextImageKHR;
 	PFN_vkQueuePresentKHR fpQueuePresentKHR;
 };
+#endif
