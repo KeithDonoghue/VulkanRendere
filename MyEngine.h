@@ -62,7 +62,7 @@ private:
 	std::ofstream mLogFile;
 	std::ofstream mInformationLogFile;
 	EngineWindow *	m_TheWindow;
-	Swapchain *		m_TheSwapchain;
+	Swapchain * m_TheSwapchain;
 	VulkanDevice *  m_TheVulkanDevice;
 
 	std::vector<std::string>		m_AvailableExtensionNames;

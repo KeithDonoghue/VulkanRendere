@@ -352,7 +352,7 @@ void MyEngine::CreateGameWindow(HINSTANCE Appinstance)
 
 void MyEngine::FinishedFrameWork()
 {
-	m_TheWindow->Redraw();
+	m_TheWindow->Update();
 }
 
 

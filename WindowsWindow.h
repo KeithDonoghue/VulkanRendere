@@ -9,6 +9,7 @@
 #include <string>
 
 
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 class EngineWindow {
@@ -19,11 +20,13 @@ public:
 	EngineWindow(int x, int y, int width, int height);
 	void Initialize(HINSTANCE);
 	void Redraw();
+	void Update();
 	void InitializeSurface(VkInstance);
 	void SetUpSwapChain();
 	VkSurfaceKHR GetSurface(){ return m_TheVulkanPresentSurface; }
 private:
 	std::string name;
+	bool mInitialized;
 	int m_width;
 	int m_height;
 	int x_offset;

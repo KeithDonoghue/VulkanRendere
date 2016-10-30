@@ -4,6 +4,7 @@
 #define _ISOC11_SOURCE /* for aligned_alloc() */
 #endif
 
+
 EngineWindow::EngineWindow(int x, int y, int width, int height)
 {
 	m_width = width;
@@ -21,6 +22,7 @@ EngineWindow::~EngineWindow()
 
 void EngineWindow::Initialize(HINSTANCE AppInstance)
 {
+
 	WNDCLASSEX win_class;
 	m_WindowsAppInstance = AppInstance;
 
@@ -60,25 +62,55 @@ void EngineWindow::Initialize(HINSTANCE AppInstance)
 		NULL,               // handle to parent
 		NULL,               // handle to menu
 		AppInstance,   // hInstance
-		NULL);              // no extra parameters
+		this);              // no extra parameters
 
 }
 
 
-void EngineWindow::Redraw()
+
+
+
+void EngineWindow::Update()
 {
 	RedrawWindow(m_handle, NULL, NULL, RDW_INTERNALPAINT);
 }
 
+
+
+
+void EngineWindow::Redraw()
+{
+
+	if (!mInitialized)
+	{
+
+	}
+	OutputDebugString("Hello\n");
+}
+
+
+
+
+
 // MS-Windows event handling function:
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	char tmp_str[] = "Hello";
+	CREATESTRUCT * temp;
+	EngineWindow * presentable;
 	switch (uMsg) {
 	case WM_CREATE:
 		return 0;
 	case WM_CLOSE:
 		PostQuitMessage(0);
 		return 0;
+	case WM_NCCREATE:
+		temp = reinterpret_cast<CREATESTRUCT*>(lParam);
+		presentable = reinterpret_cast<EngineWindow *>(temp->lpCreateParams);
+		SetWindowLongPtr(hWnd, 0, (LONG)presentable);
+		return TRUE;
+	case WM_PAINT:
+		reinterpret_cast<EngineWindow*>(GetWindowLongPtr(hWnd, 0))->Redraw();
+
 	default:
 		break;
 	}

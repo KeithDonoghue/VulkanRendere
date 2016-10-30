@@ -24,6 +24,7 @@
 							}\
 			    }
 
+class Swapchain;
 
 
 class VulkanDevice
@@ -46,6 +47,8 @@ private:
 	VkDeviceQueueCreateInfo mQueueCreateInfo;
 	VkDeviceCreateInfo mCreateInfo;
 
+
+	Swapchain *		m_TheSwapchain;
 
 
 	// VK_KHR_swapchain function pointers
