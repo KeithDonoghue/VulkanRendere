@@ -7,7 +7,7 @@
 
 #include <vulkan/vulkan.h>
 #include <string>
-
+#include <atomic>
 
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -26,7 +26,7 @@ public:
 	VkSurfaceKHR GetSurface(){ return m_TheVulkanPresentSurface; }
 private:
 	std::string name;
-	bool mInitialized;
+	std::atomic<bool> mInitialized;
 	int m_width;
 	int m_height;
 	int x_offset;

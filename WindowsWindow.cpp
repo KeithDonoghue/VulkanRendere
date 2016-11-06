@@ -5,6 +5,7 @@
 #endif
 
 
+
 EngineWindow::EngineWindow(int x, int y, int width, int height)
 {
 	m_width = width;
@@ -12,6 +13,7 @@ EngineWindow::EngineWindow(int x, int y, int width, int height)
 	x_offset = x;
 	y_offset = y;
 	name = "Destroyer";
+	mInitialized.store(0);
 }
 
 EngineWindow::~EngineWindow()
@@ -22,7 +24,6 @@ EngineWindow::~EngineWindow()
 
 void EngineWindow::Initialize(HINSTANCE AppInstance)
 {
-
 	WNDCLASSEX win_class;
 	m_WindowsAppInstance = AppInstance;
 
@@ -78,14 +79,23 @@ void EngineWindow::Update()
 
 
 
-void EngineWindow::Redraw()
+void EngineWindow::Redraw()   
+{
+	
+	if (!mInitialized.load())
+	{
+		mInitialized.store(true);
+	}
+	
+}
+
+
+
+
+
+void EngineWindow::SetUpSwapChain()
 {
 
-	if (!mInitialized)
-	{
-
-	}
-	OutputDebugString("Hello\n");
 }
 
 
@@ -94,9 +104,10 @@ void EngineWindow::Redraw()
 
 // MS-Windows event handling function:
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	char tmp_str[] = "Hello";
 	CREATESTRUCT * temp;
 	EngineWindow * presentable;
+
+
 	switch (uMsg) {
 	case WM_CREATE:
 		return 0;
@@ -106,10 +117,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_NCCREATE:
 		temp = reinterpret_cast<CREATESTRUCT*>(lParam);
 		presentable = reinterpret_cast<EngineWindow *>(temp->lpCreateParams);
-		SetWindowLongPtr(hWnd, 0, (LONG)presentable);
+		SetWindowLongPtr(hWnd, GWLP_USERDATA, (DWORD_PTR)presentable);
 		return TRUE;
 	case WM_PAINT:
-		reinterpret_cast<EngineWindow*>(GetWindowLongPtr(hWnd, 0))->Redraw();
+		presentable = reinterpret_cast<EngineWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+		if (presentable)
+			presentable->Redraw();
 
 	default:
 		break;
@@ -139,8 +152,5 @@ void EngineWindow::InitializeSurface(VkInstance assosciatedInstance)
 }
 
 
-void EngineWindow::SetUpSwapChain()
-{
 
-}
 
