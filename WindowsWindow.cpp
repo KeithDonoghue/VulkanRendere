@@ -5,6 +5,9 @@
 #endif
 
 
+#include "Swapchain.h"
+
+
 
 EngineWindow::EngineWindow(int x, int y, int width, int height)
 {
@@ -86,16 +89,19 @@ void EngineWindow::Redraw()
 	{
 		mInitialized.store(true);
 	}
-	
+	else
+	{
+		mSwapchain->Update();
+	}
 }
 
 
 
 
 
-void EngineWindow::SetUpSwapChain()
+void EngineWindow::SetUpSwapChain(Swapchain* theSwapchain)
 {
-
+	mSwapchain = theSwapchain;
 }
 
 

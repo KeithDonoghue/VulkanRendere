@@ -52,6 +52,8 @@ mPhysicalDevice(thePhysicalDevice)
 		OutputDebugString("Hurrah! Created a device.");
 	}
 
+
+	vkGetDeviceQueue(TheVulkanDevice, 0, 0, &mQueue);
 }
 
 
@@ -80,10 +82,3 @@ void VulkanDevice::GetDeviceExtensionPointers()
 
 }
 
-
-
-
-VkDevice VulkanDevice::GetVkDevice()
-{
-	return TheVulkanDevice;
-}

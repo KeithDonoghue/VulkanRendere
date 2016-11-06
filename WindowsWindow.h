@@ -10,6 +10,8 @@
 #include <atomic>
 
 
+class Swapchain;
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 class EngineWindow {
@@ -22,8 +24,10 @@ public:
 	void Redraw();
 	void Update();
 	void InitializeSurface(VkInstance);
-	void SetUpSwapChain();
+	void SetUpSwapChain(Swapchain*);
 	VkSurfaceKHR GetSurface(){ return m_TheVulkanPresentSurface; }
+
+
 private:
 	std::string name;
 	std::atomic<bool> mInitialized;
@@ -33,6 +37,8 @@ private:
 	int y_offset;
 	HWND m_handle;
 	HINSTANCE m_WindowsAppInstance;
+
+	Swapchain * mSwapchain;
 
 	VkInstance		m_InstanceForSurface;
 	VkSurfaceKHR	m_TheVulkanPresentSurface;

@@ -484,6 +484,7 @@ void MyEngine::CreateSwapchain()
 {
 
 	m_TheSwapchain = new Swapchain(m_TheVulkanDevice, m_TheWindow);
+	m_TheWindow->SetUpSwapChain(m_TheSwapchain);
 }
 
 

@@ -80,7 +80,91 @@ void Swapchain::init()
 		EngineLog("success!");
 	}
 
+	GetImages();
+}
 
+
+
+
+
+void Swapchain::GetImages()
+{
+	uint32_t SwapchainImageCount;
+	VkResult result = vkGetSwapchainImagesKHR(mDevice->GetVkDevice(), theVulkanSwapchain, &SwapchainImageCount, nullptr);
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to get Images");
+	}
+
+	VkImage *  SwpachainImages = (VkImage*) malloc(SwapchainImageCount* sizeof(VkImage));
+	result = vkGetSwapchainImagesKHR(mDevice->GetVkDevice(), theVulkanSwapchain, &SwapchainImageCount, SwpachainImages);
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to get Images");
+	}
+}
+
+
+
+
+
+void Swapchain::Update()
+{
+
+
+	VkSemaphore WaitForAquireSemaphore;
+	VkSemaphoreCreateInfo SemaphoreCreateInfo;
+	memset(&SemaphoreCreateInfo, 0, sizeof(SemaphoreCreateInfo));
+
+	SemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	SemaphoreCreateInfo.pNext = nullptr;
+	SemaphoreCreateInfo.flags = 0; //reserved for future use.
+
+
+	VkResult result = vkCreateSemaphore(mDevice->GetVkDevice(), &SemaphoreCreateInfo, nullptr, &WaitForAquireSemaphore);
+
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to create semaphore");
+	}
+
+	uint32_t presentIndex;
+	result = vkAcquireNextImageKHR(mDevice->GetVkDevice(), 
+		theVulkanSwapchain, 
+		UINT64_MAX, 
+		WaitForAquireSemaphore, 
+		VK_NULL_HANDLE, 
+		&presentIndex);
+
+
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to acquire image");
+	}
+
+	VkPresentInfoKHR thePresentInfo;
+	memset(&thePresentInfo, 0, sizeof(VkPresentInfoKHR));
+	thePresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	thePresentInfo.pNext = nullptr;
+	thePresentInfo.waitSemaphoreCount = 1;
+	thePresentInfo.pWaitSemaphores = &WaitForAquireSemaphore;
+	thePresentInfo.swapchainCount = 1;
+	thePresentInfo.pSwapchains = &theVulkanSwapchain;
+	thePresentInfo.pImageIndices = &presentIndex;
+
+	result = vkQueuePresentKHR(mDevice->GetVkQueue(), &thePresentInfo);
+
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to present Image");
+	}
+
+	vkDestroySemaphore(mDevice->GetVkDevice(), WaitForAquireSemaphore, nullptr);
 
 
 

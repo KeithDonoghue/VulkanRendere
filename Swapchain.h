@@ -8,6 +8,8 @@ public:
 	Swapchain(VulkanDevice*, EngineWindow*);
 	Swapchain(VulkanDevice*, EngineWindow*, VkSwapchainCreateInfoKHR);
 	~Swapchain();
+	void GetImages();
+	void Update();
 
 private:
 	void init();

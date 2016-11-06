@@ -33,7 +33,15 @@ public:
 	VulkanDevice(VkPhysicalDevice);
 	~VulkanDevice();
 
-	VkDevice GetVkDevice();
+	VkDevice GetVkDevice()
+	{
+		return TheVulkanDevice;
+	}
+
+	VkQueue GetVkQueue()
+	{
+		return mQueue;
+	}
 
 	void GetDeviceExtensionPointers();
 
@@ -44,6 +52,8 @@ private:
 private:
 	VkDevice TheVulkanDevice;
 	VkPhysicalDevice mPhysicalDevice;
+	VkQueue mQueue;
+
 	VkDeviceQueueCreateInfo mQueueCreateInfo;
 	VkDeviceCreateInfo mCreateInfo;
 
