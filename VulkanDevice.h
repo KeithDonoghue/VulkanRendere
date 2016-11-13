@@ -1,6 +1,12 @@
-#include "Vulkan/Vulkan.h"
 #ifndef VULKAN_DEVICE_H
 #define VULKAN_DEVICE_H 1
+
+#include "Vulkan/Vulkan.h"
+
+#include <vector>
+
+
+
 
 #ifdef _WIN32
 #define ERR_EXIT(err_msg, err_class)                                           \
@@ -24,7 +30,8 @@
 							}\
 			    }
 
-class Swapchain;
+class CommandPool;
+class VulkanImage;
 
 
 class VulkanDevice
@@ -44,6 +51,8 @@ public:
 	}
 
 	void GetDeviceExtensionPointers();
+	void CreateCommandPool();
+	void PopulatePresentableImages(VkImage *, uint32_t);
 
 
 private:
@@ -58,8 +67,10 @@ private:
 	VkDeviceCreateInfo mCreateInfo;
 
 
-	Swapchain *		m_TheSwapchain;
+	CommandPool *	mCommandPool;
 
+	std::vector<VulkanImage> mPresentableImageArray;
+	std::vector<uint32_t>		mAvailableImageIndicesArray;
 
 	// VK_KHR_swapchain function pointers
 

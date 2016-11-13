@@ -1,4 +1,8 @@
 #include "VulkanDevice.h"
+#include "VulkanImage.h"
+
+#include "CommandPool.h"
+
 
 #include "Windows.h"
 
@@ -54,6 +58,7 @@ mPhysicalDevice(thePhysicalDevice)
 
 
 	vkGetDeviceQueue(TheVulkanDevice, 0, 0, &mQueue);
+	CreateCommandPool();
 }
 
 
@@ -63,6 +68,7 @@ mPhysicalDevice(thePhysicalDevice)
 
 VulkanDevice::~VulkanDevice()
 {
+	delete mCommandPool;
 	vkDestroyDevice(TheVulkanDevice, nullptr);
 }
 
@@ -80,5 +86,26 @@ void VulkanDevice::GetDeviceExtensionPointers()
 	GET_DEVICE_PROC_ADDR(TheVulkanDevice, AcquireNextImageKHR);
 	GET_DEVICE_PROC_ADDR(TheVulkanDevice, QueuePresentKHR);
 
+}
+
+
+
+
+
+void VulkanDevice::CreateCommandPool()
+{
+	mCommandPool = new CommandPool(this);
+}
+
+
+
+
+
+void VulkanDevice::PopulatePresentableImages(VkImage * ImageArray, uint32_t size)
+{
+	for (uint32_t i = 0; i < size; i++)
+	{
+		mPresentableImageArray.emplace_back(VulkanImage(ImageArray[i]));
+	}
 }
 

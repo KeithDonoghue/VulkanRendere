@@ -104,6 +104,11 @@ void Swapchain::GetImages()
 	{
 		EngineLog("Failed to get Images");
 	}
+	else
+	{
+		mDevice->PopulatePresentableImages(SwpachainImages, SwapchainImageCount);
+	}
+
 }
 
 
@@ -139,8 +144,6 @@ void Swapchain::Update()
 		VK_NULL_HANDLE, 
 		&presentIndex);
 
-
-
 	if (result != VK_SUCCESS)
 	{
 		EngineLog("Failed to acquire image");
@@ -162,6 +165,13 @@ void Swapchain::Update()
 	if (result != VK_SUCCESS)
 	{
 		EngineLog("Failed to present Image");
+	}
+
+	result = vkQueueWaitIdle(mDevice->GetVkQueue());
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Wait Idle failed.");
 	}
 
 	vkDestroySemaphore(mDevice->GetVkDevice(), WaitForAquireSemaphore, nullptr);
