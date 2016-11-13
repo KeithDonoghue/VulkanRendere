@@ -35,8 +35,10 @@ private:
 
 
 #if ENGINE_LOGGING_ENABLED
-#define EngineLog(...)  LoggingClass * Logger = LoggingClass::GetInstance();  \
-	Logger->Log(__VA_ARGS__);
+#define EngineLog(...) {	\
+	LoggingClass * Logger = LoggingClass::GetInstance();  \
+	Logger->Log(__VA_ARGS__);	\
+	}
 #else
 #define EngineLog(...) do {} while(0);
 #endif 
