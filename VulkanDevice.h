@@ -4,7 +4,7 @@
 #include "Vulkan/Vulkan.h"
 
 #include <vector>
-
+#include <deque>
 
 
 
@@ -32,6 +32,7 @@
 
 class CommandPool;
 class VulkanImage;
+class VulkanMemMngr;
 
 
 class VulkanDevice
@@ -52,7 +53,12 @@ public:
 
 	void GetDeviceExtensionPointers();
 	void CreateCommandPool();
+	void CreateMemoryManager();
 	void PopulatePresentableImages(VkImage *, uint32_t);
+	void AddPresentableIndex(uint32_t);
+
+	uint32_t GetNextPresentable(VkSemaphore *, VkSemaphore * signalSemaphore);
+
 
 
 private:
@@ -68,9 +74,10 @@ private:
 
 
 	CommandPool *	mCommandPool;
+	VulkanMemMngr * mMemoryManager;
 
 	std::vector<VulkanImage> mPresentableImageArray;
-	std::vector<uint32_t>		mAvailableImageIndicesArray;
+	std::deque<uint32_t>		mAvailableImageIndicesArray;
 
 	// VK_KHR_swapchain function pointers
 

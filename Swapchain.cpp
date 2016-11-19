@@ -28,7 +28,7 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 	mCreateInfo.imageColorSpace		= VK_COLORSPACE_SRGB_NONLINEAR_KHR;
 	mCreateInfo.imageExtent			= WindowSize;
 	mCreateInfo.imageArrayLayers	= 1;
-	mCreateInfo.imageUsage			= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	mCreateInfo.imageUsage			= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	mCreateInfo.imageSharingMode	= VK_SHARING_MODE_EXCLUSIVE;
 	//mCreateInfo.queueFamilyIndexCount 
 	//mCreateInfo.pQueueFamilyIndices
@@ -65,7 +65,6 @@ Swapchain::~Swapchain()
 
 void Swapchain::init()
 {
-
 
 	mCreateInfo.surface = mWindow->GetSurface();
 
@@ -120,6 +119,7 @@ void Swapchain::Update()
 
 
 	VkSemaphore WaitForAquireSemaphore;
+	VkSemaphore WaitForPresentSemaphore;
 	VkSemaphoreCreateInfo SemaphoreCreateInfo;
 	memset(&SemaphoreCreateInfo, 0, sizeof(SemaphoreCreateInfo));
 
@@ -136,6 +136,16 @@ void Swapchain::Update()
 		EngineLog("Failed to create semaphore");
 	}
 
+
+	result = vkCreateSemaphore(mDevice->GetVkDevice(), &SemaphoreCreateInfo, nullptr, &WaitForPresentSemaphore);
+
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to create semaphore");
+	}
+
+
 	uint32_t presentIndex;
 	result = vkAcquireNextImageKHR(mDevice->GetVkDevice(), 
 		theVulkanSwapchain, 
@@ -149,12 +159,16 @@ void Swapchain::Update()
 		EngineLog("Failed to acquire image");
 	}
 
+	mDevice->AddPresentableIndex(presentIndex);
+
+	mDevice->GetNextPresentable(&WaitForAquireSemaphore, &WaitForPresentSemaphore);
+
 	VkPresentInfoKHR thePresentInfo;
 	memset(&thePresentInfo, 0, sizeof(VkPresentInfoKHR));
 	thePresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	thePresentInfo.pNext = nullptr;
 	thePresentInfo.waitSemaphoreCount = 1;
-	thePresentInfo.pWaitSemaphores = &WaitForAquireSemaphore;
+	thePresentInfo.pWaitSemaphores = &WaitForPresentSemaphore;
 	thePresentInfo.swapchainCount = 1;
 	thePresentInfo.pSwapchains = &theVulkanSwapchain;
 	thePresentInfo.pImageIndices = &presentIndex;
@@ -167,15 +181,16 @@ void Swapchain::Update()
 		EngineLog("Failed to present Image");
 	}
 
+	
 	result = vkQueueWaitIdle(mDevice->GetVkQueue());
 
 	if (result != VK_SUCCESS)
 	{
 		EngineLog("Wait Idle failed.");
 	}
-
+	
+	
 	vkDestroySemaphore(mDevice->GetVkDevice(), WaitForAquireSemaphore, nullptr);
-
-
+	vkDestroySemaphore(mDevice->GetVkDevice(), WaitForPresentSemaphore, nullptr);
 
 }

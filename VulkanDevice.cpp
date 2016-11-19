@@ -1,11 +1,16 @@
 #include "VulkanDevice.h"
 #include "VulkanImage.h"
+#include "VulkanMemoryManager.h"
 
 #include "CommandPool.h"
+#include "CommandBuffer.h"
+
 
 
 #include "Windows.h"
 
+#define  ENGINE_LOGGING_ENABLED 1
+#include "EngineLogging.h"
 
 #include <vector>
 
@@ -59,6 +64,7 @@ mPhysicalDevice(thePhysicalDevice)
 
 	vkGetDeviceQueue(TheVulkanDevice, 0, 0, &mQueue);
 	CreateCommandPool();
+	CreateMemoryManager();
 }
 
 
@@ -69,6 +75,7 @@ mPhysicalDevice(thePhysicalDevice)
 VulkanDevice::~VulkanDevice()
 {
 	delete mCommandPool;
+	delete mMemoryManager;
 	vkDestroyDevice(TheVulkanDevice, nullptr);
 }
 
@@ -108,4 +115,62 @@ void VulkanDevice::PopulatePresentableImages(VkImage * ImageArray, uint32_t size
 		mPresentableImageArray.emplace_back(VulkanImage(ImageArray[i]));
 	}
 }
+
+
+
+
+
+uint32_t VulkanDevice::GetNextPresentable(VkSemaphore * waitSemaphore, VkSemaphore * signalSemaphore)
+{
+	CommandBuffer * currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
+	uint32_t nextImage = mAvailableImageIndicesArray.front();
+
+	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
+
+	mAvailableImageIndicesArray.pop_front();
+
+
+		
+	VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+	VkSubmitInfo theSubmitInfo;
+	memset(&theSubmitInfo, 0, sizeof(VkSubmitInfo));
+	theSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	theSubmitInfo.pNext = nullptr;
+	theSubmitInfo.waitSemaphoreCount = 1;
+	theSubmitInfo.pWaitSemaphores = waitSemaphore;
+	theSubmitInfo.pWaitDstStageMask = &stageFlags;
+	theSubmitInfo.commandBufferCount = 1;
+	theSubmitInfo.pCommandBuffers = currentCommandBuffer->GetVkCommandBuffer();
+	theSubmitInfo.signalSemaphoreCount = 1;
+	theSubmitInfo.pSignalSemaphores = signalSemaphore;
+
+		
+	VkResult  result = vkQueueSubmit(mQueue, 1, &theSubmitInfo, VK_NULL_HANDLE);
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Queue submission failed.");
+	}
+
+	return nextImage;
+}
+
+
+
+
+
+void VulkanDevice::AddPresentableIndex(uint32_t freeImage)
+{
+	mAvailableImageIndicesArray.push_back(freeImage);
+}
+
+
+
+
+void VulkanDevice::CreateMemoryManager()
+{
+	mMemoryManager = new VulkanMemMngr(mPhysicalDevice);
+}
+
 
