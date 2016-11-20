@@ -147,7 +147,7 @@ uint32_t VulkanDevice::GetNextPresentable(VkSemaphore * waitSemaphore, VkSemapho
 	theSubmitInfo.pWaitSemaphores = waitSemaphore;
 	theSubmitInfo.pWaitDstStageMask = &stageFlags;
 	theSubmitInfo.commandBufferCount = 1;
-	theSubmitInfo.pCommandBuffers = currentCommandBuffer->GetVkCommandBuffer();
+	theSubmitInfo.pCommandBuffers = currentCommandBuffer->GetVkCommandBufferAddr();
 	theSubmitInfo.signalSemaphoreCount = 1;
 	theSubmitInfo.pSignalSemaphores = signalSemaphore;
 
@@ -168,6 +168,7 @@ uint32_t VulkanDevice::GetNextPresentable(VkSemaphore * waitSemaphore, VkSemapho
 
 void VulkanDevice::AddPresentableIndex(uint32_t freeImage)
 {
+	mPresentableImageArray[freeImage].SetLayout(VK_IMAGE_LAYOUT_UNDEFINED);
 	mAvailableImageIndicesArray.push_back(freeImage);
 }
 

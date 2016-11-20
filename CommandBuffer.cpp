@@ -8,7 +8,8 @@
 
 #include <cstring>
 
-CommandBuffer::CommandBuffer(CommandPool * thePool)
+CommandBuffer::CommandBuffer(CommandPool * thePool):
+mInRecordingState(false)
 {
 	memset(&mAllocateInfo, 0, sizeof(VkCommandBufferAllocateInfo));
 
@@ -32,6 +33,84 @@ CommandBuffer::CommandBuffer(CommandPool * thePool)
 
 void CommandBuffer::GetImageReadyForPresenting(VulkanImage theImage)
 {
+	if (!mInRecordingState)
+	{
+		BeginCommandBuffer();
+		mInRecordingState = true;
+	}
+
+
+	ClearImage(theImage);
+
+	VkImageSubresourceRange subRange = {};
+
+	subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subRange.baseMipLevel = 0;
+	subRange.levelCount = 1;
+	subRange.baseArrayLayer = 0;
+	subRange.layerCount = 1;
+	VkImageMemoryBarrier PresentationMemoryBarrier = {};
+
+	PresentationMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	PresentationMemoryBarrier.pNext = nullptr;
+	PresentationMemoryBarrier.srcAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	PresentationMemoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	PresentationMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+	PresentationMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	PresentationMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	PresentationMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	PresentationMemoryBarrier.image = theImage.GetVkImage();
+	PresentationMemoryBarrier.subresourceRange = subRange;
+
+	vkCmdPipelineBarrier(m_TheVulkanCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &PresentationMemoryBarrier);
+
+	theImage.SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+	EndCommandBuffer();
+}
+
+
+
+void CommandBuffer::CopyImage(VulkanImage& src, VulkanImage& dst)
+{
+	if (!mInRecordingState)
+	{
+		BeginCommandBuffer();
+		mInRecordingState = true;
+	}
+
+
+	VkImageSubresourceRange subRange = {};
+
+	subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subRange.baseMipLevel = 0;
+	subRange.levelCount = 1;
+	subRange.baseArrayLayer = 0;
+	subRange.layerCount = 1;
+
+	VkImageMemoryBarrier memoryBarrier = {};
+
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	memoryBarrier.pNext = nullptr;
+	memoryBarrier.srcAccessMask = 0;
+	memoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	memoryBarrier.oldLayout = src.GetLayout();
+	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.image = src.GetVkImage();
+	memoryBarrier.subresourceRange = subRange;
+
+
+	vkCmdPipelineBarrier(m_TheVulkanCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+}
+
+
+
+void CommandBuffer::BeginCommandBuffer()
+{
 	VkCommandBufferBeginInfo BeginInfo;
 	memset(&BeginInfo, 0, sizeof(VkCommandBufferBeginInfo));
 	BeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -45,6 +124,39 @@ void CommandBuffer::GetImageReadyForPresenting(VulkanImage theImage)
 	{
 		EngineLog("failed to begin command buffer.")
 	}
+}
+
+
+
+
+
+void CommandBuffer::EndCommandBuffer()
+{
+	if (!mInRecordingState)
+	{
+		EngineLog("Attempting to end command buffer not in recording state. Error.")
+	}
+
+	VkResult result = vkEndCommandBuffer(m_TheVulkanCommandBuffer);
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("failed to end command buffer.")
+	}
+
+	mInRecordingState = false;
+}
+
+
+void CommandBuffer::ClearImage(VulkanImage& theImage)
+{
+	if (!mInRecordingState)
+	{
+		BeginCommandBuffer();
+		mInRecordingState = true;
+	}
+
+	//Currently only 1 clear value.
 
 	VkImageSubresourceRange subRange;
 	memset(&subRange, 0, sizeof(VkImageSubresourceRange));
@@ -61,48 +173,29 @@ void CommandBuffer::GetImageReadyForPresenting(VulkanImage theImage)
 	memoryBarrier.pNext = nullptr;
 	memoryBarrier.srcAccessMask = 0;
 	memoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	memoryBarrier.oldLayout = theImage.GetLayout();
 	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.image = theImage.GetVkImage();
 	memoryBarrier.subresourceRange = subRange;
 
+	theImage.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-	vkCmdPipelineBarrier(m_TheVulkanCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+	vkCmdPipelineBarrier(GetVkCommandBuffer(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 		0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+
+
+	static float green = 0.0f;
 
 
 	VkClearColorValue clearColour;
 	memset(&clearColour, 0, sizeof(VkClearColorValue));
 	clearColour.float32[0] = 1.0f;
-	clearColour.float32[0] = 1.0f;
-	clearColour.float32[0] = 0.0f;
-	clearColour.float32[0] = 1.0f;
+	clearColour.float32[1] = 0.0f;
+	clearColour.float32[2] = 0.0f;
+	clearColour.float32[3] = 0.0f;
+	
+	vkCmdClearColorImage(GetVkCommandBuffer(), theImage.GetVkImage(), VK_IMAGE_LAYOUT_GENERAL, &clearColour, 1, &subRange);
 
-	vkCmdClearColorImage(m_TheVulkanCommandBuffer, theImage.GetVkImage(), VK_IMAGE_LAYOUT_GENERAL, &clearColour, 1, &subRange);
-
-
-	VkImageMemoryBarrier PresentationMemoryBarrier;
-	memset(&PresentationMemoryBarrier, 0, sizeof(VkImageMemoryBarrier));
-	PresentationMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	PresentationMemoryBarrier.pNext = nullptr;
-	PresentationMemoryBarrier.srcAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	PresentationMemoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	PresentationMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-	PresentationMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	PresentationMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	PresentationMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	PresentationMemoryBarrier.image = theImage.GetVkImage();
-	PresentationMemoryBarrier.subresourceRange = subRange;
-
-	vkCmdPipelineBarrier(m_TheVulkanCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-		0, 0, nullptr, 0, nullptr, 1, &PresentationMemoryBarrier);
-
-	result = vkEndCommandBuffer(m_TheVulkanCommandBuffer);
-
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("failed to end command buffer.")
-	}
 }

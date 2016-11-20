@@ -41,6 +41,9 @@ mDevice(theDevice)
 		EngineLog("Couldn't create VulkanImage");
 	}
 
+
+	mCurrentLayout = mCreateInfo.initialLayout;
+
 	VkMemoryRequirements memoryRequirements = {};
 	vkGetImageMemoryRequirements(mDevice->GetVkDevice(), m_TheVulkanImage, &memoryRequirements);
 
@@ -65,4 +68,12 @@ VulkanImage::~VulkanImage()
 		mDevice->GetMemManager()->FreeAllocation(mAllocStruct);
 		vkDestroyImage(mDevice->GetVkDevice(), m_TheVulkanImage, nullptr);
 	}
+}
+
+
+
+
+void VulkanImage::LoadDataToImage()
+{
+
 }

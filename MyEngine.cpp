@@ -507,21 +507,32 @@ VKAPI_ATTR VkBool32 VKAPI_CALL FirstAllPurposeDebugReportCallback(
 	*TheLogFile << std::endl << "Hello" << std::endl;
 	switch (flags)
 	{
-	case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
+		case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
+		{
 			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_INFORMATION_BIT_EXT" << std::endl;
 			break;
-	case VK_DEBUG_REPORT_WARNING_BIT_EXT :
+		}
+		case VK_DEBUG_REPORT_WARNING_BIT_EXT:
+		{
 			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_WARNING_BIT_EXT" << std::endl;
 			break;
-	case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT :
+		}
+		case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
+		{
 			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT" << std::endl;
 			break;
-	case VK_DEBUG_REPORT_ERROR_BIT_EXT:
+		}
+		case VK_DEBUG_REPORT_ERROR_BIT_EXT:
+		{
 			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_ERROR_BIT_EXT" << std::endl;
+			DebugBreak();
 			break;
-	case VK_DEBUG_REPORT_DEBUG_BIT_EXT :
+		}
+		case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
+		{
 			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_DEBUG_BIT_EXT " << location << " " << objectType << std::endl;
 			break;
+		}
 	}
 
 	*TheLogFile <<  pLayerPrefix << std::endl;
