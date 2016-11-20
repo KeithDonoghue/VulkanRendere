@@ -14,6 +14,7 @@ mSystemManaged(systemManaged)
 
 
 
+
 VulkanImage::VulkanImage(VulkanDevice * theDevice, int width, int height):
 mCreateInfo{},
 mDevice(theDevice)
@@ -55,8 +56,8 @@ mDevice(theDevice)
 	{
 		EngineLog("Couldn't bind image memory.");
 	}
-
 }
+
 
 
 
@@ -69,6 +70,7 @@ VulkanImage::~VulkanImage()
 		vkDestroyImage(mDevice->GetVkDevice(), m_TheVulkanImage, nullptr);
 	}
 }
+
 
 
 

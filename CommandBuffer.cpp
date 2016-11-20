@@ -31,7 +31,7 @@ mInRecordingState(false)
 
 
 
-void CommandBuffer::GetImageReadyForPresenting(VulkanImage theImage)
+void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
 {
 	if (!mInRecordingState)
 	{
@@ -42,30 +42,7 @@ void CommandBuffer::GetImageReadyForPresenting(VulkanImage theImage)
 
 	ClearImage(theImage);
 
-	VkImageSubresourceRange subRange = {};
-
-	subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	subRange.baseMipLevel = 0;
-	subRange.levelCount = 1;
-	subRange.baseArrayLayer = 0;
-	subRange.layerCount = 1;
-	VkImageMemoryBarrier PresentationMemoryBarrier = {};
-
-	PresentationMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	PresentationMemoryBarrier.pNext = nullptr;
-	PresentationMemoryBarrier.srcAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	PresentationMemoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	PresentationMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-	PresentationMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	PresentationMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	PresentationMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	PresentationMemoryBarrier.image = theImage.GetVkImage();
-	PresentationMemoryBarrier.subresourceRange = subRange;
-
-	vkCmdPipelineBarrier(m_TheVulkanCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-		0, 0, nullptr, 0, nullptr, 1, &PresentationMemoryBarrier);
-
-	theImage.SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	RealGetImageReadyForPresenting(theImage);
 
 	EndCommandBuffer();
 }
@@ -204,5 +181,38 @@ void CommandBuffer::ClearImage(VulkanImage& theImage)
 	clearColour.float32[3] = 0.0f;
 	
 	vkCmdClearColorImage(GetVkCommandBuffer(), theImage.GetVkImage(), VK_IMAGE_LAYOUT_GENERAL, &clearColour, 1, &subRange);
+}
+
+
+
+
+
+void CommandBuffer::RealGetImageReadyForPresenting(VulkanImage& theImage)
+{
+
+	VkImageSubresourceRange subRange = {};
+
+	subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subRange.baseMipLevel = 0;
+	subRange.levelCount = 1;
+	subRange.baseArrayLayer = 0;
+	subRange.layerCount = 1;
+	VkImageMemoryBarrier PresentationMemoryBarrier = {};
+
+	PresentationMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	PresentationMemoryBarrier.pNext = nullptr;
+	PresentationMemoryBarrier.srcAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	PresentationMemoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	PresentationMemoryBarrier.oldLayout = theImage.GetLayout();
+	PresentationMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	PresentationMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	PresentationMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	PresentationMemoryBarrier.image = theImage.GetVkImage();
+	PresentationMemoryBarrier.subresourceRange = subRange;
+
+	vkCmdPipelineBarrier(m_TheVulkanCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &PresentationMemoryBarrier);
+
+	theImage.SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 }
