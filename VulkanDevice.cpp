@@ -74,6 +74,7 @@ mPhysicalDevice(thePhysicalDevice)
 
 VulkanDevice::~VulkanDevice()
 {
+	delete mImage;
 	delete mCommandPool;
 	delete mMemoryManager;
 	vkDestroyDevice(TheVulkanDevice, nullptr);
@@ -112,7 +113,7 @@ void VulkanDevice::PopulatePresentableImages(VkImage * ImageArray, uint32_t size
 {
 	for (uint32_t i = 0; i < size; i++)
 	{
-		mPresentableImageArray.emplace_back(VulkanImage(ImageArray[i]));
+		mPresentableImageArray.emplace_back(VulkanImage(ImageArray[i], true));
 	}
 }
 
@@ -127,6 +128,11 @@ uint32_t VulkanDevice::GetNextPresentable(VkSemaphore * waitSemaphore, VkSemapho
 
 	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
 
+	if (!ImageCreated)
+	{
+		ImageCreated = true;
+		mImage = new VulkanImage(this, 1080, 500);
+	}
 	mAvailableImageIndicesArray.pop_front();
 
 
@@ -170,7 +176,7 @@ void VulkanDevice::AddPresentableIndex(uint32_t freeImage)
 
 void VulkanDevice::CreateMemoryManager()
 {
-	mMemoryManager = new VulkanMemMngr(mPhysicalDevice);
+	mMemoryManager = new VulkanMemMngr(this);
 }
 
 

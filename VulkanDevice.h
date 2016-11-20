@@ -46,6 +46,11 @@ public:
 		return TheVulkanDevice;
 	}
 
+	VkPhysicalDevice GetVkPhysicalDevice()
+	{
+		return mPhysicalDevice;
+	}
+
 	VkQueue GetVkQueue()
 	{
 		return mQueue;
@@ -56,6 +61,7 @@ public:
 	void CreateMemoryManager();
 	void PopulatePresentableImages(VkImage *, uint32_t);
 	void AddPresentableIndex(uint32_t);
+	VulkanMemMngr * GetMemManager() { return mMemoryManager;  };
 
 	uint32_t GetNextPresentable(VkSemaphore *, VkSemaphore * signalSemaphore);
 
@@ -72,6 +78,9 @@ private:
 	VkDeviceQueueCreateInfo mQueueCreateInfo;
 	VkDeviceCreateInfo mCreateInfo;
 
+
+	bool ImageCreated;
+	VulkanImage * mImage;
 
 	CommandPool *	mCommandPool;
 	VulkanMemMngr * mMemoryManager;
