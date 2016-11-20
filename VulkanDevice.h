@@ -56,6 +56,8 @@ public:
 		return mQueue;
 	}
 
+	CommandPool * GetCommandPool() { return mCommandPool; }
+
 	void GetDeviceExtensionPointers();
 	void CreateCommandPool();
 	void CreateMemoryManager();

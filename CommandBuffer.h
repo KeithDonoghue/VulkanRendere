@@ -21,7 +21,6 @@ public:
 	void CopyImage(VulkanImage&, VulkanImage&);
 	void BeginCommandBuffer();
 	void EndCommandBuffer();
-	void ClearImage(VulkanImage&);
 
 private:
 	VkCommandBufferAllocateInfo mAllocateInfo;

@@ -1,12 +1,16 @@
 #include "VulkanImage.h"
 #include "VulkanDevice.h"
 
+#include "CommandPool.h"
+#include "CommandBuffer.h"
+
 #include "vulkan/vulkan.h"
 
 #define ENGINE_LOGGING_ENABLED 1 
 #include "EngineLogging.h"
 
-VulkanImage::VulkanImage(VkImage theImage, bool systemManaged) :
+VulkanImage::VulkanImage(VulkanDevice * theDevice, VkImage theImage, bool systemManaged) :
+mDevice(theDevice),
 m_TheVulkanImage(theImage),
 mSystemManaged(systemManaged)
 {}
@@ -69,6 +73,57 @@ VulkanImage::~VulkanImage()
 		mDevice->GetMemManager()->FreeAllocation(mAllocStruct);
 		vkDestroyImage(mDevice->GetVkDevice(), m_TheVulkanImage, nullptr);
 	}
+}
+
+
+
+
+
+void VulkanImage::ClearImage()
+{
+
+	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool()->GetCurrentCommandBuffer();
+	currentCommandBuffer->BeginCommandBuffer();
+
+
+	//Currently only 1 clear value.
+
+	VkImageSubresourceRange subRange;
+	memset(&subRange, 0, sizeof(VkImageSubresourceRange));
+
+	subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subRange.baseMipLevel = 0;
+	subRange.levelCount = 1;
+	subRange.baseArrayLayer = 0;
+	subRange.layerCount = 1;
+
+	VkImageMemoryBarrier memoryBarrier;
+	memset(&memoryBarrier, 0, sizeof(VkImageMemoryBarrier));
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	memoryBarrier.pNext = nullptr;
+	memoryBarrier.srcAccessMask = 0;
+	memoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	memoryBarrier.oldLayout = GetLayout();
+	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.image = GetVkImage();
+	memoryBarrier.subresourceRange = subRange;
+
+	SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+	vkCmdPipelineBarrier(currentCommandBuffer->GetVkCommandBuffer(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+
+
+	VkClearColorValue clearColour;
+	memset(&clearColour, 0, sizeof(VkClearColorValue));
+	clearColour.float32[0] = 1.0f;
+	clearColour.float32[1] = 0.0f;
+	clearColour.float32[2] = 0.0f;
+	clearColour.float32[3] = 0.0f;
+
+	vkCmdClearColorImage(currentCommandBuffer->GetVkCommandBuffer(), GetVkImage(), VK_IMAGE_LAYOUT_GENERAL, &clearColour, 1, &subRange);
 }
 
 

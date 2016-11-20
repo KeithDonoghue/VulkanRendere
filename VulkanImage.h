@@ -12,7 +12,7 @@ class VulkanDevice;
 class VulkanImage
 {
 public:
-	VulkanImage(VkImage, bool =  false);
+	VulkanImage(VulkanDevice*, VkImage, bool =  false);
 	VulkanImage(VulkanDevice*, int width, int heigh);
 	~VulkanImage();
 	VkImage GetVkImage() { return m_TheVulkanImage; }
@@ -21,6 +21,7 @@ public:
 	bool IsDirty(){ return mDirty; }
 
 	void LoadDataToImage();
+	void ClearImage();
 
 private:
 	VkImage m_TheVulkanImage;

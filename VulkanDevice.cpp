@@ -113,7 +113,7 @@ void VulkanDevice::PopulatePresentableImages(VkImage * ImageArray, uint32_t size
 {
 	for (uint32_t i = 0; i < size; i++)
 	{
-		mPresentableImageArray.emplace_back(VulkanImage(ImageArray[i], true));
+		mPresentableImageArray.emplace_back(VulkanImage(this, ImageArray[i], true));
 	}
 }
 
