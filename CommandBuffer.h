@@ -3,6 +3,13 @@
 class CommandPool;
 class VulkanImage;
 
+typedef enum CommandBufferState{
+	CB_INITIAL_STATE = 0,
+	CB_RECORDING_STATE = 1,
+	CB_EXECUTABLE_STATE = 2
+} CommandBufferState;
+
+
 class CommandBuffer
 {
 public:
@@ -19,5 +26,5 @@ public:
 private:
 	VkCommandBufferAllocateInfo mAllocateInfo;
 	VkCommandBuffer m_TheVulkanCommandBuffer;
-	bool mInRecordingState;
+	CommandBufferState mCommandBufferState;
 };

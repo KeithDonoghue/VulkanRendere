@@ -9,7 +9,7 @@
 #include <cstring>
 
 CommandBuffer::CommandBuffer(CommandPool * thePool):
-mInRecordingState(false)
+mCommandBufferState(CB_INITIAL_STATE)
 {
 	memset(&mAllocateInfo, 0, sizeof(VkCommandBufferAllocateInfo));
 
@@ -33,12 +33,7 @@ mInRecordingState(false)
 
 void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
 {
-	if (!mInRecordingState)
-	{
-		BeginCommandBuffer();
-		mInRecordingState = true;
-	}
-
+	BeginCommandBuffer();
 
 	ClearImage(theImage);
 
@@ -53,12 +48,8 @@ void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
 
 void CommandBuffer::CopyImage(VulkanImage& src, VulkanImage& dst)
 {
-	if (!mInRecordingState)
-	{
-		BeginCommandBuffer();
-		mInRecordingState = true;
-	}
 
+	BeginCommandBuffer();
 
 	VkImageSubresourceRange subRange = {};
 
@@ -92,6 +83,11 @@ void CommandBuffer::CopyImage(VulkanImage& src, VulkanImage& dst)
 
 void CommandBuffer::BeginCommandBuffer()
 {
+	if (mCommandBufferState == CB_RECORDING_STATE)
+	{
+		return;
+	}
+
 	VkCommandBufferBeginInfo BeginInfo;
 	memset(&BeginInfo, 0, sizeof(VkCommandBufferBeginInfo));
 	BeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -105,6 +101,11 @@ void CommandBuffer::BeginCommandBuffer()
 	{
 		EngineLog("failed to begin command buffer.")
 	}
+	else
+	{
+		mCommandBufferState = CB_RECORDING_STATE;
+	}
+
 }
 
 
@@ -113,7 +114,7 @@ void CommandBuffer::BeginCommandBuffer()
 
 void CommandBuffer::EndCommandBuffer()
 {
-	if (!mInRecordingState)
+	if (mCommandBufferState != CB_RECORDING_STATE)
 	{
 		EngineLog("Attempting to end command buffer not in recording state. Error.")
 	}
@@ -124,8 +125,10 @@ void CommandBuffer::EndCommandBuffer()
 	{
 		EngineLog("failed to end command buffer.")
 	}
-
-	mInRecordingState = false;
+	else
+	{
+		mCommandBufferState = CB_EXECUTABLE_STATE;
+	}
 }
 
 
@@ -134,11 +137,9 @@ void CommandBuffer::EndCommandBuffer()
 
 void CommandBuffer::ClearImage(VulkanImage& theImage)
 {
-	if (!mInRecordingState)
-	{
-		BeginCommandBuffer();
-		mInRecordingState = true;
-	}
+
+	BeginCommandBuffer();
+
 
 	//Currently only 1 clear value.
 
