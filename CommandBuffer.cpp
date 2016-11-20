@@ -33,13 +33,11 @@ mCommandBufferState(CB_INITIAL_STATE)
 
 void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
 {
-	BeginCommandBuffer();
 
 	ClearImage(theImage);
 
 	RealGetImageReadyForPresenting(theImage);
 
-	EndCommandBuffer();
 }
 
 
@@ -169,9 +167,6 @@ void CommandBuffer::ClearImage(VulkanImage& theImage)
 
 	vkCmdPipelineBarrier(GetVkCommandBuffer(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 		0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
-
-
-	static float green = 0.0f;
 
 
 	VkClearColorValue clearColour;

@@ -151,6 +151,7 @@ uint32_t VulkanDevice::GetNextPresentable(VkSemaphore * waitSemaphore, VkSemapho
 	theSubmitInfo.signalSemaphoreCount = 1;
 	theSubmitInfo.pSignalSemaphores = signalSemaphore;
 
+	currentCommandBuffer->EndCommandBuffer();
 		
 	VkResult  result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, VK_NULL_HANDLE);
 
