@@ -293,10 +293,7 @@ void MyEngine::CreateVulkanInstance()
 		char str[256];
 		sprintf_s(str, "Couldn't Create Vulkan instance %d\n", theResult);
 		OutputDebugString(str);
-
 	}
-
-
 }
 
 void MyEngine::DoPhysicalDeviceStuff()

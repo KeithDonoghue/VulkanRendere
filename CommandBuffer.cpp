@@ -72,6 +72,8 @@ void CommandBuffer::GetImageReadyForPresenting(VulkanImage theImage)
 
 
 
+
+
 void CommandBuffer::CopyImage(VulkanImage& src, VulkanImage& dst)
 {
 	if (!mInRecordingState)
@@ -106,6 +108,8 @@ void CommandBuffer::CopyImage(VulkanImage& src, VulkanImage& dst)
 	vkCmdPipelineBarrier(m_TheVulkanCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 		0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
 }
+
+
 
 
 
@@ -146,6 +150,9 @@ void CommandBuffer::EndCommandBuffer()
 
 	mInRecordingState = false;
 }
+
+
+
 
 
 void CommandBuffer::ClearImage(VulkanImage& theImage)
