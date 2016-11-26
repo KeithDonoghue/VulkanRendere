@@ -17,7 +17,6 @@ public:
 	VkCommandBuffer GetVkCommandBuffer() { return m_TheVulkanCommandBuffer; }
 	VkCommandBuffer * GetVkCommandBufferAddr() { return &m_TheVulkanCommandBuffer; }
 	void GetImageReadyForPresenting(VulkanImage&);
-	void RealGetImageReadyForPresenting(VulkanImage&);
 	void CopyImage(VulkanImage&, VulkanImage&);
 	void BeginCommandBuffer();
 	void EndCommandBuffer();

@@ -50,6 +50,7 @@ mPhysicalDevice(thePhysicalDevice)
 	DeviceCreateInfo.pQueueCreateInfos = &QueueCreateInfo;
 
 
+
 	VkResult theResult = vkCreateDevice(mPhysicalDevice, &DeviceCreateInfo, nullptr, &TheVulkanDevice);
 
 	if (theResult != VK_SUCCESS)
@@ -126,15 +127,20 @@ uint32_t VulkanDevice::GetNextPresentable(VkSemaphore * waitSemaphore, VkSemapho
 	CommandBuffer * currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
 	uint32_t nextImage = mAvailableImageIndicesArray.front();
 
-	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
 
 	if (!ImageCreated)
 	{
 		ImageCreated = true;
-		mImage = new VulkanImage(this, 1080, 500);
+		mImage = new VulkanImage(this, 400, 400);
+		mImage->ClearImage(0.0f);
 	}
 	mAvailableImageIndicesArray.pop_front();
 
+	mPresentableImageArray[nextImage].ClearImage(1.0f);
+	//currentCommandBuffer->CopyImage(*mImage, mPresentableImageArray[nextImage]);
+	mPresentableImageArray[nextImage].CopyImageData(*mImage);
+
+	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
 
 		
 	VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;

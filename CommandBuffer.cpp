@@ -31,48 +31,45 @@ mCommandBufferState(CB_INITIAL_STATE)
 
 
 
-void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
-{
-
-	theImage.ClearImage();
-
-	RealGetImageReadyForPresenting(theImage);
-
-}
-
-
-
-
 
 void CommandBuffer::CopyImage(VulkanImage& src, VulkanImage& dst)
 {
 
 	BeginCommandBuffer();
 
-	VkImageSubresourceRange subRange = {};
 
-	subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	subRange.baseMipLevel = 0;
-	subRange.levelCount = 1;
-	subRange.baseArrayLayer = 0;
-	subRange.layerCount = 1;
-
-	VkImageMemoryBarrier memoryBarrier = {};
-
-	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	memoryBarrier.pNext = nullptr;
-	memoryBarrier.srcAccessMask = 0;
-	memoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	memoryBarrier.oldLayout = src.GetLayout();
-	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memoryBarrier.image = src.GetVkImage();
-	memoryBarrier.subresourceRange = subRange;
+	VkImageCopy copyRegion = {};
+		
+	VkImageSubresourceLayers srcSubresource = {};
+	VkImageSubresourceLayers dstSubresource = {};
 
 
-	vkCmdPipelineBarrier(m_TheVulkanCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-		0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+	srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+	srcSubresource.baseArrayLayer = 0;
+	dstSubresource.baseArrayLayer = 0;
+
+	srcSubresource.layerCount = 1;
+	dstSubresource.layerCount = 1;
+
+	srcSubresource.mipLevel = 0;
+	dstSubresource.mipLevel = 0;
+
+	copyRegion.srcSubresource = srcSubresource;
+	copyRegion.srcOffset = { 0, 0, 0 };
+	copyRegion.dstSubresource = dstSubresource;
+	copyRegion.dstOffset = { 0, 0, 0 };
+	copyRegion.extent = { 400, 400, 1 };
+
+	vkCmdCopyImage(GetVkCommandBuffer(),
+		src.GetVkImage(), 
+		VK_IMAGE_LAYOUT_GENERAL, 
+		dst.GetVkImage(), 
+		VK_IMAGE_LAYOUT_GENERAL, 
+		1, 
+		&copyRegion);
+
 }
 
 
@@ -134,7 +131,7 @@ void CommandBuffer::EndCommandBuffer()
 
 
 
-void CommandBuffer::RealGetImageReadyForPresenting(VulkanImage& theImage)
+void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
 {
 
 	VkImageSubresourceRange subRange = {};

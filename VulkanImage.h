@@ -17,11 +17,14 @@ public:
 	~VulkanImage();
 	VkImage GetVkImage() { return m_TheVulkanImage; }
 	VkImageLayout GetLayout() { return mCurrentLayout; }
+
+	void CopyImageData(VulkanImage&);
+	void InsertImageMemoryBarrier(VkImageSubresourceRange&, VkImageLayout);
 	void SetLayout(VkImageLayout layout) { mCurrentLayout = layout; }
 	bool IsDirty(){ return mDirty; }
 
 	void LoadDataToImage();
-	void ClearImage();
+	void ClearImage(float);
 
 private:
 	VkImage m_TheVulkanImage;
