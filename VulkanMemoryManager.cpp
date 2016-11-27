@@ -10,7 +10,7 @@ mDevice(theDevice),
 mMemProperties{}
 {
 
-	mLog.open("MemoryLog.txt");
+	mLog.open("Logs/MemoryLog.txt");
 
 	vkGetPhysicalDeviceMemoryProperties(mDevice->GetVkPhysicalDevice(), &mMemProperties);
 
