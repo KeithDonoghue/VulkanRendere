@@ -10,3 +10,5 @@
 	requiers waiting on a queue or an event, dont do this on the work thread. If we are done with it we can move on.
 
 4)	Memory Management.
+
+5)	Start Working in Engine terms rather than vulkan terms.
