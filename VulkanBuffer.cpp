@@ -9,7 +9,8 @@
 #include <algorithm>
 
 VulkanBuffer::VulkanBuffer(VulkanDevice* theDevice):
-mDevice(theDevice)
+mDevice(theDevice),
+TempMemoryBound(false)
 {
 
 	VkBufferCreateInfo theBufferCreateInfo = {};
@@ -28,22 +29,8 @@ mDevice(theDevice)
 	{
 		EngineLog("Failed to create buffer");
 	}
-
-
-	VkMemoryRequirements memRequirements;
-
-	vkGetBufferMemoryRequirements(mDevice->GetVkDevice(), m_TheVulkanBuffer, &memRequirements);
-
-	mBlock = mDevice->GetMemManager()->GetAllocation(memRequirements, true);
-
-	result = vkBindBufferMemory(mDevice->GetVkDevice(), m_TheVulkanBuffer, mBlock.mPointer, mBlock.mOffset);
-
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Failed To bind Buffer memory");
-	}
-
 }
+
 
 
 
@@ -57,8 +44,11 @@ VulkanBuffer::~VulkanBuffer()
 
 
 
+
+
 void VulkanBuffer::LoadBufferData(void * data, uint32_t size)
 {
+	BindMemory();
 
 	void * mappedPointer;
 	VkResult result = vkMapMemory(mDevice->GetVkDevice(), mBlock.mPointer, mBlock.mOffset, mBlock.mSize, 0, &mappedPointer);
@@ -72,5 +62,31 @@ void VulkanBuffer::LoadBufferData(void * data, uint32_t size)
 	memcpy(mappedPointer, data, std::min<int>(size, mBlock.mSize));
 
 	vkUnmapMemory(mDevice->GetVkDevice(), mBlock.mPointer);
+
+}
+
+
+
+
+void VulkanBuffer::BindMemory()
+{
+	if (TempMemoryBound)
+		return;
+	VkMemoryRequirements memRequirements;
+
+	vkGetBufferMemoryRequirements(mDevice->GetVkDevice(), m_TheVulkanBuffer, &memRequirements);
+
+	mBlock = mDevice->GetMemManager()->GetAllocation(memRequirements, true);
+
+	VkResult result = vkBindBufferMemory(mDevice->GetVkDevice(), m_TheVulkanBuffer, mBlock.mPointer, mBlock.mOffset);
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed To bind Buffer memory");
+	}
+	else
+	{
+		TempMemoryBound = true;
+	}
 
 }
