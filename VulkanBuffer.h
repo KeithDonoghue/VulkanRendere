@@ -8,6 +8,7 @@ class VulkanBuffer {
 public:
 	VulkanBuffer(VulkanDevice*);
 	~VulkanBuffer();
+	VkBuffer GetVkBuffer(){ return m_TheVulkanBuffer; }
 	void LoadBufferData(void *, uint32_t size);
 
 private:

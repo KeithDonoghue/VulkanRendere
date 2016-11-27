@@ -3,6 +3,7 @@
 
 #include "CommandPool.h"
 #include "CommandBuffer.h"
+#include "VulkanBuffer.h"
 
 #include "vulkan/vulkan.h"
 
@@ -78,6 +79,7 @@ VulkanImage::~VulkanImage()
 	if (!mSystemManaged)
 	{
 		vkQueueWaitIdle(mDevice->GetVkQueue());
+		delete mStagingBuffer;
 		mDevice->GetMemManager()->FreeAllocation(mAllocStruct);
 		vkDestroyImage(mDevice->GetVkDevice(), m_TheVulkanImage, nullptr);
 	}
@@ -222,44 +224,10 @@ void VulkanImage::CopyImageData(VulkanImage& src)
 void VulkanImage::LoadDataToImage()
 {
 
-	
-	VkBuffer theBuffer;
-
-	VkBufferCreateInfo theBufferCreateInfo = {};
-	theBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	theBufferCreateInfo.pNext = nullptr;
-	theBufferCreateInfo.flags = 0; 
-	theBufferCreateInfo.size = 2000000;
-	theBufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-	theBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	theBufferCreateInfo.queueFamilyIndexCount = 0;
-	theBufferCreateInfo.pQueueFamilyIndices = nullptr;
-
-	VkResult result = vkCreateBuffer(mDevice->GetVkDevice(), &theBufferCreateInfo, nullptr, &theBuffer);
-
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Failed to create buffer");
-	}
-
-
-
-	VkMemoryRequirements memRequirements;
-
-	vkGetBufferMemoryRequirements(mDevice->GetVkDevice(), theBuffer, &memRequirements);
-
-	allocation block = mDevice->GetMemManager()->GetAllocation(memRequirements, true);	
-
-	result = vkBindBufferMemory(mDevice->GetVkDevice(), theBuffer, block.mPointer, block.mOffset);
-
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Failed To bind Buffer memory");
-	}
-
+	mStagingBuffer = new VulkanBuffer(mDevice);
 
 	int x, y, n;
-	unsigned char * data = stbi_load("jpeg_bad.jpg", &x, &y, &n, 4);
+	unsigned char * data = stbi_load("Resources/jpeg_bad.jpg", &x, &y, &n, 4);
 
 	unsigned char * pointer = (unsigned char*)malloc(x * y * 4);
 	memset(pointer, 0, x * y * 4);
@@ -269,21 +237,11 @@ void VulkanImage::LoadDataToImage()
 		memset(pointer + i, 255, 1);
 	}
 	
+	mStagingBuffer->LoadBufferData(data, x*y * 4);
 
-	void * mappedPointer;
-	result = vkMapMemory(mDevice->GetVkDevice(), block.mPointer, block.mOffset, block.mSize, 0, &mappedPointer);
-
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Failed To Map memory");
-	}
-
-	
-	memcpy(mappedPointer, data, std::min<int>(x*y*4, block.mSize));
 
 	stbi_image_free(data);
 
-	vkUnmapMemory(mDevice->GetVkDevice(), block.mPointer);
 
 
 	VkImageSubresourceLayers subLayers = {};
@@ -315,12 +273,7 @@ void VulkanImage::LoadDataToImage()
 
 	InsertImageMemoryBarrier(barrierSubRange, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	vkCmdCopyBufferToImage(currentCommandBuffer->GetVkCommandBuffer(), theBuffer, GetVkImage(), GetLayout(), 1, &copyInfo);
-
-//	mDevice->GetMemManager()->FreeAllocation(block);
-
-//	vkDestroyBuffer(mDevice->GetVkDevice(), theBuffer, nullptr);
-
+	vkCmdCopyBufferToImage(currentCommandBuffer->GetVkCommandBuffer(), mStagingBuffer->GetVkBuffer(), GetVkImage(), GetLayout(), 1, &copyInfo);
 }
 
 

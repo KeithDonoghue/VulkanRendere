@@ -8,6 +8,7 @@
 #include <vector>
 
 class VulkanDevice;
+class VulkanBuffer;
 
 class VulkanImage
 {
@@ -33,6 +34,7 @@ private:
 	VkExtent3D mExtent;
 
 	VulkanDevice * mDevice;
+	VulkanBuffer * mStagingBuffer;
 	bool mSystemManaged;
 	allocation mAllocStruct;
 	bool mDirty;
