@@ -38,10 +38,12 @@ mMemProperties{}
 
 
 
-allocation VulkanMemMngr::GetAllocation(VkMemoryRequirements theRequirements, bool mappable)
+allocation VulkanMemMngr::GetAllocation(VkMemoryRequirements& theRequirements, bool mappable)
 {
-
-	VkMemoryPropertyFlags required = 0;// VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	VkMemoryPropertyFlags required = 0;
+	
+	if (mappable)
+		required = 	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
 	allocation returnValue = {};
 	

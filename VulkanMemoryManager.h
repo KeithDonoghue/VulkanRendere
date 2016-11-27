@@ -23,7 +23,7 @@ class VulkanMemMngr
 {
 public:
 	VulkanMemMngr(VulkanDevice*);
-	allocation GetAllocation(VkMemoryRequirements, bool mappable = false);
+	allocation GetAllocation(VkMemoryRequirements&, bool mappable = false);
 	void FreeAllocation(allocation);
 	uint32_t FindProperties(uint32_t, VkMemoryPropertyFlags);
 

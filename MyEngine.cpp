@@ -522,7 +522,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL FirstAllPurposeDebugReportCallback(
 		case VK_DEBUG_REPORT_ERROR_BIT_EXT:
 		{
 			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_ERROR_BIT_EXT" << std::endl;
-			DebugBreak();
+			//DebugBreak();
 			break;
 		}
 		case VK_DEBUG_REPORT_DEBUG_BIT_EXT:

@@ -133,11 +133,11 @@ uint32_t VulkanDevice::GetNextPresentable(VkSemaphore * waitSemaphore, VkSemapho
 		ImageCreated = true;
 		mImage = new VulkanImage(this, 400, 400);
 		mImage->ClearImage(0.0f);
+		mImage->LoadDataToImage();
 	}
 	mAvailableImageIndicesArray.pop_front();
 
 	mPresentableImageArray[nextImage].ClearImage(1.0f);
-	//currentCommandBuffer->CopyImage(*mImage, mPresentableImageArray[nextImage]);
 	mPresentableImageArray[nextImage].CopyImageData(*mImage);
 
 	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);

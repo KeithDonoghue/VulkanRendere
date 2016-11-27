@@ -30,6 +30,7 @@ private:
 	VkImage m_TheVulkanImage;
 	VkImageCreateInfo mCreateInfo;
 	VkImageLayout mCurrentLayout;
+	VkExtent3D mExtent;
 
 	VulkanDevice * mDevice;
 	bool mSystemManaged;
