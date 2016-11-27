@@ -1,0 +1,12 @@
+1)
+	Curretnly all the work is done in WndProc which calls into Swapchain update, where all teh work is done.
+	Swapchain update should only get the next presentabl and optionally finalize it. all the rendering work should 
+	be done in a different thread.
+
+2)	The Swaphain and que present semaphores need to be used correctly this needs mre than jsut two semaphires
+	but some sort of round robin or pool.
+
+3)	Delete objects queue. We ahve to wait for teh gpu to be done with it before we delete therefore this 
+	requiers waiting on a queue or an event, dont do this on the work thread. If we are done with it we can move on.
+
+4)	Memory Management.
