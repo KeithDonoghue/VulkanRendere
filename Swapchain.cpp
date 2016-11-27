@@ -58,6 +58,10 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow, VkSwapc
 
 Swapchain::~Swapchain()
 {
+
+	vkDestroySemaphore(mDevice->GetVkDevice(), mWaitForAquireSemaphore, nullptr);
+	vkDestroySemaphore(mDevice->GetVkDevice(), mWaitForPresentSemaphore, nullptr);
+
 	vkDestroySwapchainKHR(mDevice->GetVkDevice(), theVulkanSwapchain, nullptr);
 }
 
@@ -80,6 +84,34 @@ void Swapchain::init()
 	}
 
 	GetImages();
+
+
+
+	VkSemaphoreCreateInfo SemaphoreCreateInfo;
+	memset(&SemaphoreCreateInfo, 0, sizeof(SemaphoreCreateInfo));
+
+	SemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	SemaphoreCreateInfo.pNext = nullptr;
+	SemaphoreCreateInfo.flags = 0; //reserved for future use.
+
+
+	result = vkCreateSemaphore(mDevice->GetVkDevice(), &SemaphoreCreateInfo, nullptr, &mWaitForAquireSemaphore);
+
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to create semaphore");
+	}
+
+
+	result = vkCreateSemaphore(mDevice->GetVkDevice(), &SemaphoreCreateInfo, nullptr, &mWaitForPresentSemaphore);
+
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to create semaphore");
+	}
+
 }
 
 
@@ -118,39 +150,11 @@ void Swapchain::Update()
 {
 
 
-	VkSemaphore WaitForAquireSemaphore;
-	VkSemaphore WaitForPresentSemaphore;
-	VkSemaphoreCreateInfo SemaphoreCreateInfo;
-	memset(&SemaphoreCreateInfo, 0, sizeof(SemaphoreCreateInfo));
-
-	SemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	SemaphoreCreateInfo.pNext = nullptr;
-	SemaphoreCreateInfo.flags = 0; //reserved for future use.
-
-
-	VkResult result = vkCreateSemaphore(mDevice->GetVkDevice(), &SemaphoreCreateInfo, nullptr, &WaitForAquireSemaphore);
-
-
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Failed to create semaphore");
-	}
-
-
-	result = vkCreateSemaphore(mDevice->GetVkDevice(), &SemaphoreCreateInfo, nullptr, &WaitForPresentSemaphore);
-
-
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Failed to create semaphore");
-	}
-
-
 	uint32_t presentIndex;
-	result = vkAcquireNextImageKHR(mDevice->GetVkDevice(), 
+	VkResult result = vkAcquireNextImageKHR(mDevice->GetVkDevice(), 
 		theVulkanSwapchain, 
 		UINT64_MAX, 
-		WaitForAquireSemaphore, 
+		mWaitForAquireSemaphore, 
 		VK_NULL_HANDLE, 
 		&presentIndex);
 
@@ -161,14 +165,14 @@ void Swapchain::Update()
 
 	mDevice->AddPresentableIndex(presentIndex);
 
-	mDevice->GetNextPresentable(&WaitForAquireSemaphore, &WaitForPresentSemaphore);
+	mDevice->GetNextPresentable(&mWaitForAquireSemaphore, &mWaitForPresentSemaphore);
 
 	VkPresentInfoKHR thePresentInfo;
 	memset(&thePresentInfo, 0, sizeof(VkPresentInfoKHR));
 	thePresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	thePresentInfo.pNext = nullptr;
 	thePresentInfo.waitSemaphoreCount = 1;
-	thePresentInfo.pWaitSemaphores = &WaitForPresentSemaphore;
+	thePresentInfo.pWaitSemaphores = &mWaitForPresentSemaphore;
 	thePresentInfo.swapchainCount = 1;
 	thePresentInfo.pSwapchains = &theVulkanSwapchain;
 	thePresentInfo.pImageIndices = &presentIndex;
@@ -188,9 +192,4 @@ void Swapchain::Update()
 	{
 		EngineLog("Wait Idle failed.");
 	}
-	
-	
-	vkDestroySemaphore(mDevice->GetVkDevice(), WaitForAquireSemaphore, nullptr);
-	vkDestroySemaphore(mDevice->GetVkDevice(), WaitForPresentSemaphore, nullptr);
-
 }

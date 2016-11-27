@@ -20,4 +20,7 @@ private:
 	EngineWindow * mWindow;
 
 	VkSwapchainKHR theVulkanSwapchain;
+
+	VkSemaphore mWaitForAquireSemaphore;
+	VkSemaphore mWaitForPresentSemaphore;
 };
