@@ -3,6 +3,8 @@
 #include "VulkanDevice.h"
 #include "WindowsWindow.h"
 
+#include <deque>
+
 class Swapchain{
 public:
 	Swapchain(VulkanDevice*, EngineWindow*);
@@ -21,6 +23,7 @@ private:
 
 	VkSwapchainKHR theVulkanSwapchain;
 
-	VkSemaphore mWaitForAquireSemaphore;
-	VkSemaphore mWaitForPresentSemaphore;
+
+	uint32_t mNumSemaphores;
+	std::deque<VkSemaphore> mSemaphoreQueue;
 };

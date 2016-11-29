@@ -9,7 +9,8 @@
 
 Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 	mDevice(theDevice),
-	mWindow(theWindow)
+	mWindow(theWindow),
+	mNumSemaphores(0)
 { 
 
 	VkExtent2D WindowSize;
@@ -59,8 +60,10 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow, VkSwapc
 Swapchain::~Swapchain()
 {
 
-	vkDestroySemaphore(mDevice->GetVkDevice(), mWaitForAquireSemaphore, nullptr);
-	vkDestroySemaphore(mDevice->GetVkDevice(), mWaitForPresentSemaphore, nullptr);
+	for (VkSemaphore it : mSemaphoreQueue)
+	{
+		vkDestroySemaphore(mDevice->GetVkDevice(), it, nullptr);
+	}
 
 	vkDestroySwapchainKHR(mDevice->GetVkDevice(), theVulkanSwapchain, nullptr);
 }
@@ -84,33 +87,6 @@ void Swapchain::init()
 	}
 
 	GetImages();
-
-
-
-	VkSemaphoreCreateInfo SemaphoreCreateInfo;
-	memset(&SemaphoreCreateInfo, 0, sizeof(SemaphoreCreateInfo));
-
-	SemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	SemaphoreCreateInfo.pNext = nullptr;
-	SemaphoreCreateInfo.flags = 0; //reserved for future use.
-
-
-	result = vkCreateSemaphore(mDevice->GetVkDevice(), &SemaphoreCreateInfo, nullptr, &mWaitForAquireSemaphore);
-
-
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Failed to create semaphore");
-	}
-
-
-	result = vkCreateSemaphore(mDevice->GetVkDevice(), &SemaphoreCreateInfo, nullptr, &mWaitForPresentSemaphore);
-
-
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Failed to create semaphore");
-	}
 
 }
 
@@ -140,6 +116,33 @@ void Swapchain::GetImages()
 		mDevice->PopulatePresentableImages(SwpachainImages, SwapchainImageCount);
 	}
 
+
+
+	// An aquire and a release sempahore for each image in the swapchian.
+	mNumSemaphores = SwapchainImageCount * 2;
+
+
+	VkSemaphoreCreateInfo SemaphoreCreateInfo;
+	memset(&SemaphoreCreateInfo, 0, sizeof(SemaphoreCreateInfo));
+
+	SemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	SemaphoreCreateInfo.pNext = nullptr;
+	SemaphoreCreateInfo.flags = 0; //reserved for future use.
+
+	for (int i = 0; i < mNumSemaphores; i++)
+	{
+		VkSemaphore tempSemaphore;
+		result = vkCreateSemaphore(mDevice->GetVkDevice(), &SemaphoreCreateInfo, nullptr, &tempSemaphore);
+
+		if (result != VK_SUCCESS)
+		{
+			EngineLog("Failed to create semaphore");
+		}
+		else
+		{
+			mSemaphoreQueue.push_back(tempSemaphore);
+		}
+	}
 }
 
 
@@ -148,34 +151,40 @@ void Swapchain::GetImages()
 
 void Swapchain::Update()
 {
-
-
+	SyncedPresentable nextFreePresentable;
 	uint32_t presentIndex;
+
+	nextFreePresentable.mWaitForAcquireSemaphore = mSemaphoreQueue.front();
+	mSemaphoreQueue.pop_front();
+
+	nextFreePresentable.mWaitForPresentSemaphore = mSemaphoreQueue.front();
+	mSemaphoreQueue.pop_front();
+
 	VkResult result = vkAcquireNextImageKHR(mDevice->GetVkDevice(), 
 		theVulkanSwapchain, 
 		UINT64_MAX, 
-		mWaitForAquireSemaphore, 
+		nextFreePresentable.mWaitForAcquireSemaphore, 
 		VK_NULL_HANDLE, 
-		&presentIndex);
+		&nextFreePresentable.mEngineImageIndex);
 
 	if (result != VK_SUCCESS)
 	{
 		EngineLog("Failed to acquire image");
 	}
 
-	mDevice->AddPresentableIndex(presentIndex);
+	mDevice->AddPresentableIndex(nextFreePresentable);
 
-	mDevice->GetNextPresentable(&mWaitForAquireSemaphore, &mWaitForPresentSemaphore);
+	nextFreePresentable =  mDevice->GetNextPresentable();
 
 	VkPresentInfoKHR thePresentInfo;
 	memset(&thePresentInfo, 0, sizeof(VkPresentInfoKHR));
 	thePresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	thePresentInfo.pNext = nullptr;
 	thePresentInfo.waitSemaphoreCount = 1;
-	thePresentInfo.pWaitSemaphores = &mWaitForPresentSemaphore;
+	thePresentInfo.pWaitSemaphores = &nextFreePresentable.mWaitForPresentSemaphore;
 	thePresentInfo.swapchainCount = 1;
 	thePresentInfo.pSwapchains = &theVulkanSwapchain;
-	thePresentInfo.pImageIndices = &presentIndex;
+	thePresentInfo.pImageIndices = &nextFreePresentable.mEngineImageIndex;
 
 	result = vkQueuePresentKHR(mDevice->GetVkQueue(), &thePresentInfo);
 
@@ -184,6 +193,10 @@ void Swapchain::Update()
 	{
 		EngineLog("Failed to present Image");
 	}
+
+
+	mSemaphoreQueue.push_back(nextFreePresentable.mWaitForAcquireSemaphore);
+	mSemaphoreQueue.push_back(nextFreePresentable.mWaitForPresentSemaphore);
 
 	
 	result = vkQueueWaitIdle(mDevice->GetVkQueue());

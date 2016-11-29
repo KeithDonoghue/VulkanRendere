@@ -122,11 +122,11 @@ void VulkanDevice::PopulatePresentableImages(VkImage * ImageArray, uint32_t size
 
 
 
-uint32_t VulkanDevice::GetNextPresentable(VkSemaphore * waitSemaphore, VkSemaphore * signalSemaphore)
+SyncedPresentable VulkanDevice::GetNextPresentable()
 {
 	CommandBuffer * currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
-	uint32_t nextImage = mAvailableImageIndicesArray.front();
-
+	SyncedPresentable nextPresentable = mAvailableImageIndicesArray.front();
+	uint32_t nextImage = nextPresentable.mEngineImageIndex;
 
 	if (!ImageCreated)
 	{
@@ -150,12 +150,12 @@ uint32_t VulkanDevice::GetNextPresentable(VkSemaphore * waitSemaphore, VkSemapho
 	theSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	theSubmitInfo.pNext = nullptr;
 	theSubmitInfo.waitSemaphoreCount = 1;
-	theSubmitInfo.pWaitSemaphores = waitSemaphore;
+	theSubmitInfo.pWaitSemaphores = &nextPresentable.mWaitForAcquireSemaphore;
 	theSubmitInfo.pWaitDstStageMask = &stageFlags;
 	theSubmitInfo.commandBufferCount = 1;
 	theSubmitInfo.pCommandBuffers = currentCommandBuffer->GetVkCommandBufferAddr();
 	theSubmitInfo.signalSemaphoreCount = 1;
-	theSubmitInfo.pSignalSemaphores = signalSemaphore;
+	theSubmitInfo.pSignalSemaphores = &nextPresentable.mWaitForPresentSemaphore;
 
 	currentCommandBuffer->EndCommandBuffer();
 		
@@ -166,16 +166,16 @@ uint32_t VulkanDevice::GetNextPresentable(VkSemaphore * waitSemaphore, VkSemapho
 		EngineLog("Queue submission failed.");
 	}
 
-	return nextImage;
+	return nextPresentable;
 }
 
 
 
 
 
-void VulkanDevice::AddPresentableIndex(uint32_t freeImage)
+void VulkanDevice::AddPresentableIndex(SyncedPresentable freeImage)
 {
-	mPresentableImageArray[freeImage].SetLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+	mPresentableImageArray[freeImage.mEngineImageIndex].SetLayout(VK_IMAGE_LAYOUT_UNDEFINED);
 	mAvailableImageIndicesArray.push_back(freeImage);
 }
 

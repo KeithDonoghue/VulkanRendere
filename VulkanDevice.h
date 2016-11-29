@@ -35,6 +35,13 @@ class VulkanImage;
 class VulkanMemMngr;
 
 
+typedef struct SyncedPresentable{
+	uint32_t	mEngineImageIndex;
+	VkSemaphore mWaitForPresentSemaphore;
+	VkSemaphore mWaitForAcquireSemaphore;
+} SyncedPresentable;
+
+
 class VulkanDevice
 {
 public:
@@ -62,10 +69,10 @@ public:
 	void CreateCommandPool();
 	void CreateMemoryManager();
 	void PopulatePresentableImages(VkImage *, uint32_t);
-	void AddPresentableIndex(uint32_t);
+	void AddPresentableIndex(SyncedPresentable);
 	VulkanMemMngr * GetMemManager() { return mMemoryManager;  };
 
-	uint32_t GetNextPresentable(VkSemaphore *, VkSemaphore * signalSemaphore);
+	SyncedPresentable GetNextPresentable();
 
 
 
@@ -88,7 +95,7 @@ private:
 	VulkanMemMngr * mMemoryManager;
 
 	std::vector<VulkanImage> mPresentableImageArray;
-	std::deque<uint32_t>		mAvailableImageIndicesArray;
+	std::deque<SyncedPresentable>		mAvailableImageIndicesArray;
 
 	// VK_KHR_swapchain function pointers
 
