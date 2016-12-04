@@ -2,6 +2,7 @@
 
 class CommandPool;
 class VulkanImage;
+class VulkanDevice;
 
 typedef enum CommandBufferState{
 	CB_INITIAL_STATE = 0,
@@ -14,15 +15,26 @@ class CommandBuffer
 {
 public:
 	CommandBuffer(CommandPool *);
+	void Init();
+	void InitializeFence();
+	~CommandBuffer();
 	VkCommandBuffer GetVkCommandBuffer() { return m_TheVulkanCommandBuffer; }
 	VkCommandBuffer * GetVkCommandBufferAddr() { return &m_TheVulkanCommandBuffer; }
+
+	VkFence GetCompletionFence() { return mCompletionFence; }
+	
+	
 	void GetImageReadyForPresenting(VulkanImage&);
 	void CopyImage(VulkanImage&, VulkanImage&);
+	bool IsComplete();
 	void BeginCommandBuffer();
 	void EndCommandBuffer();
+
 
 private:
 	VkCommandBufferAllocateInfo mAllocateInfo;
 	VkCommandBuffer m_TheVulkanCommandBuffer;
 	CommandBufferState mCommandBufferState;
+	CommandPool * mPool;
+	VkFence mCompletionFence;
 };

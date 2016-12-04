@@ -44,3 +44,38 @@ void CommandPool::CreateCommandBuffer()
 {
 	mCurrentCommandBuffer = new CommandBuffer(this);
 }
+
+
+
+
+void CommandPool::NextCmdBuffer()
+{
+	mPendingList.push_back(mCurrentCommandBuffer);
+
+	bool deleted = true;
+	std::deque<CommandBuffer*>::iterator CBuffer = mPendingList.begin();
+
+	while (CBuffer != mPendingList.end())
+	{
+		if ((*CBuffer)->IsComplete())
+		{
+			mFreeStack.push(*CBuffer);
+			CBuffer = mPendingList.erase(CBuffer);
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	if (!mFreeStack.empty())
+	{
+		mCurrentCommandBuffer = mFreeStack.top();
+		mFreeStack.pop();
+	}
+	else
+	{
+		mCurrentCommandBuffer = new CommandBuffer(mDevice->GetCommandPool());
+	}
+
+}

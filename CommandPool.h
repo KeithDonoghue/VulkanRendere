@@ -1,7 +1,11 @@
 #include <Vulkan/vulkan.h>
 
+#include <deque>
+#include <stack>
+
 class VulkanDevice;
 class CommandBuffer;
+
 
 
 class CommandPool
@@ -13,6 +17,7 @@ public:
 	VkCommandPool GetVkCommandPool() { return m_TheVulkanCommandPool; }
 	VulkanDevice * GetVulkanDevice() { return mDevice; }
 	CommandBuffer * GetCurrentCommandBuffer() { return mCurrentCommandBuffer; }
+	void NextCmdBuffer();
 
 private:
 	VkCommandPoolCreateInfo mCreateInfo;
@@ -20,4 +25,7 @@ private:
 
 	VkCommandPool m_TheVulkanCommandPool;
 	CommandBuffer * mCurrentCommandBuffer;
+	std::deque<CommandBuffer*> mPendingList;
+	std::stack<CommandBuffer*> mFreeStack;
+
 };

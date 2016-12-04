@@ -8,25 +8,96 @@
 
 #include <cstring>
 
-CommandBuffer::CommandBuffer(CommandPool * thePool):
-mCommandBufferState(CB_INITIAL_STATE)
+
+
+
+
+CommandBuffer::CommandBuffer(CommandPool * thePool) :
+mCommandBufferState(CB_INITIAL_STATE),
+mPool(thePool)
+{
+	Init();
+}
+
+
+
+
+void CommandBuffer::Init()
 {
 	memset(&mAllocateInfo, 0, sizeof(VkCommandBufferAllocateInfo));
 
 	mAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	mAllocateInfo.pNext = nullptr;
-	mAllocateInfo.commandPool = thePool->GetVkCommandPool();
+	mAllocateInfo.commandPool = mPool->GetVkCommandPool();
 	mAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	mAllocateInfo.commandBufferCount = 1;
 	
-	VkResult result = vkAllocateCommandBuffers(thePool->GetVulkanDevice()->GetVkDevice(), &mAllocateInfo, &m_TheVulkanCommandBuffer);
+	VkResult result = vkAllocateCommandBuffers(mPool->GetVulkanDevice()->GetVkDevice(), &mAllocateInfo, &m_TheVulkanCommandBuffer);
 
 	if (result != VK_SUCCESS)
 	{
 		EngineLog("Failed to allocate command buffer");
 	}
+
+	InitializeFence();
 }
 
+
+
+
+
+void CommandBuffer::InitializeFence()
+{
+	VkFenceCreateInfo createInfo = {};
+
+	createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	createInfo.pNext = nullptr;
+	createInfo.flags = 0; // VK_FENCE_CREATE_SIGNALED_BIT
+
+	VkResult result = vkCreateFence(mPool->GetVulkanDevice()->GetVkDevice(), &createInfo, nullptr, &mCompletionFence);
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to create Fence");
+	}
+}
+
+
+
+
+
+bool CommandBuffer::IsComplete()
+{
+	VkResult status  =  vkGetFenceStatus(mPool->GetVulkanDevice()->GetVkDevice(), mCompletionFence);
+	if (status == VK_SUCCESS)
+	{
+		return true;
+	}
+	else if (status = VK_NOT_READY)
+	{
+		return false;
+	}
+	else
+	{
+		EngineLog("Error querying fence.");
+		return false;
+	}
+}
+
+
+
+
+CommandBuffer::~CommandBuffer()
+{
+	
+	//Shouldn't be calling destructor without checking complete, but here for debugging.
+
+	//vkWaitForFences(mPool->GetVulkanDevice()->GetVkDevice(), 1, &mCompletionFence, VK_TRUE, UINT64_MAX);
+
+	vkDestroyFence(mPool->GetVulkanDevice()->GetVkDevice(), mCompletionFence, nullptr);
+
+	vkFreeCommandBuffers(mPool->GetVulkanDevice()->GetVkDevice(), mPool->GetVkCommandPool(), 1, &m_TheVulkanCommandBuffer);
+}
 
 
 
@@ -83,6 +154,16 @@ void CommandBuffer::BeginCommandBuffer()
 		return;
 	}
 
+
+	VkResult  result = vkResetFences(mPool->GetVulkanDevice()->GetVkDevice(), 1, &mCompletionFence);
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to reset fence");
+	}
+
+
+
 	VkCommandBufferBeginInfo BeginInfo;
 	memset(&BeginInfo, 0, sizeof(VkCommandBufferBeginInfo));
 	BeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -90,7 +171,7 @@ void CommandBuffer::BeginCommandBuffer()
 	BeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	BeginInfo.pInheritanceInfo = nullptr;
 
-	VkResult result = vkBeginCommandBuffer(m_TheVulkanCommandBuffer, &BeginInfo);
+	result = vkBeginCommandBuffer(m_TheVulkanCommandBuffer, &BeginInfo);
 
 	if (result != VK_SUCCESS)
 	{
@@ -100,7 +181,6 @@ void CommandBuffer::BeginCommandBuffer()
 	{
 		mCommandBufferState = CB_RECORDING_STATE;
 	}
-
 }
 
 

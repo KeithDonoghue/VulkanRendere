@@ -159,7 +159,9 @@ SyncedPresentable VulkanDevice::GetNextPresentable()
 
 	currentCommandBuffer->EndCommandBuffer();
 		
-	VkResult  result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, VK_NULL_HANDLE);
+	VkResult  result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, currentCommandBuffer->GetCompletionFence());
+
+	mCommandPool->NextCmdBuffer();
 
 	if (result != VK_SUCCESS)
 	{

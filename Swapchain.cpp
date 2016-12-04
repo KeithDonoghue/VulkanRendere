@@ -202,7 +202,7 @@ void Swapchain::Update()
 	mSemaphoreQueue.push_back(nextFreePresentable.mWaitForPresentSemaphore);
 
 	
-	result = vkQueueWaitIdle(mDevice->GetVkQueue());
+	//result = vkQueueWaitIdle(mDevice->GetVkQueue());
 
 	if (result != VK_SUCCESS)
 	{
