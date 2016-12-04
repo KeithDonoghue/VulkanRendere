@@ -498,7 +498,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL FirstAllPurposeDebugReportCallback(
 	const char*                 pMessage,
 	void*                       pUserData)
 {
-
 	std::ofstream * TheLogFile = static_cast<std::ofstream*>(pUserData);
 
 	*TheLogFile << std::endl << "Hello" << std::endl;
@@ -507,6 +506,11 @@ VKAPI_ATTR VkBool32 VKAPI_CALL FirstAllPurposeDebugReportCallback(
 		case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
 		{
 			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_INFORMATION_BIT_EXT" << std::endl;
+
+			if (memcmp(pLayerPrefix, "MEM", 3) == 0)
+			{
+				std::cout << "Dummy For breakpoint." << std::endl;
+			}
 			break;
 		}
 		case VK_DEBUG_REPORT_WARNING_BIT_EXT:
@@ -522,7 +526,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL FirstAllPurposeDebugReportCallback(
 		case VK_DEBUG_REPORT_ERROR_BIT_EXT:
 		{
 			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_ERROR_BIT_EXT" << std::endl;
-			//DebugBreak();
 			break;
 		}
 		case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
