@@ -7,6 +7,9 @@
 
 #include "Windows.h"
 
+
+#include <chrono>
+
 Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 	mDevice(theDevice),
 	mWindow(theWindow),
@@ -205,4 +208,28 @@ void Swapchain::Update()
 	{
 		EngineLog("Wait Idle failed.");
 	}
+
+
+	static int frames = 0;
+	static std::chrono::time_point<std::chrono::high_resolution_clock> mPrevP =
+		std::chrono::high_resolution_clock::now();
+
+	static std::chrono::time_point<std::chrono::high_resolution_clock> mCurrP;
+	
+	frames++;
+
+	if (frames > 0 )
+	{
+		mCurrP = std::chrono::high_resolution_clock::now();
+
+		uint64_t duration = std::chrono::duration_cast<std::chrono::microseconds>(mCurrP - mPrevP).count();
+
+		mPrevP = mCurrP;
+		float frameRate = 1000000.0 / duration;
+
+		EngineLog("Frame time: ", duration);
+		EngineLog("Frame rate: ", frameRate);
+		frames = 0;
+	}
+
 }
