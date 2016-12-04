@@ -210,6 +210,7 @@ void Swapchain::Update()
 	}
 
 
+#if VULKAN_FRAMERATE_LOGGER
 	static int frames = 0;
 	static std::chrono::time_point<std::chrono::high_resolution_clock> mPrevP =
 		std::chrono::high_resolution_clock::now();
@@ -231,5 +232,5 @@ void Swapchain::Update()
 		EngineLog("Frame rate: ", frameRate);
 		frames = 0;
 	}
-
+#endif
 }
