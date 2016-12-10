@@ -264,9 +264,9 @@ void MyEngine::CreateVulkanInstance()
 	for (int i = 0; i < m_AvailableExtensionNames.size(); i++)
 	UsingExtensions.push_back(m_AvailableExtensionNames[i].c_str());
 	*/
-	UsingLayers.push_back("VK_LAYER_LUNARG_api_dump");
+	//UsingLayers.push_back("VK_LAYER_LUNARG_api_dump");
 
-	UsingLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+	//UsingLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 
 
 	UsingExtensions.push_back("VK_KHR_win32_surface");

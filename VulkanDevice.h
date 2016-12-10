@@ -5,7 +5,7 @@
 
 #include <vector>
 #include <deque>
-
+#include <mutex>
 
 
 #ifdef _WIN32
@@ -69,10 +69,13 @@ public:
 	void CreateCommandPool();
 	void CreateMemoryManager();
 	void PopulatePresentableImages(VkImage *, uint32_t);
-	void AddPresentableIndex(SyncedPresentable);
+	void AddToAvailableQueue(SyncedPresentable);
 	VulkanMemMngr * GetMemManager() { return mMemoryManager;  };
 
-	SyncedPresentable GetNextPresentable();
+	SyncedPresentable GetFromAvailableQueue();
+	void				AddToPresentQueue(SyncedPresentable);
+	SyncedPresentable GetFromPresentQueue();
+	void Update();
 
 
 
@@ -96,6 +99,10 @@ private:
 
 	std::vector<VulkanImage> mPresentableImageArray;
 	std::deque<SyncedPresentable>		mAvailableImageIndicesArray;
+	std::mutex							mAvailableImageIndicesArrayLock;
+
+	std::deque<SyncedPresentable>		mPresentableImageIndicesArray;
+	std::mutex							mPresentablesImageIndicesArrayLock;
 
 	// VK_KHR_swapchain function pointers
 

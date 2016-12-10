@@ -122,10 +122,12 @@ void VulkanDevice::PopulatePresentableImages(VkImage * ImageArray, uint32_t size
 
 
 
-SyncedPresentable VulkanDevice::GetNextPresentable()
+
+void VulkanDevice::Update()
 {
+
 	CommandBuffer * currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
-	SyncedPresentable nextPresentable = mAvailableImageIndicesArray.front();
+	SyncedPresentable nextPresentable = GetFromAvailableQueue();
 	uint32_t nextImage = nextPresentable.mEngineImageIndex;
 
 	if (!ImageCreated)
@@ -135,7 +137,6 @@ SyncedPresentable VulkanDevice::GetNextPresentable()
 		mImage->ClearImage(0.0f);
 		mImage->LoadDataToImage();
 	}
-	mAvailableImageIndicesArray.pop_front();
 
 	mPresentableImageArray[nextImage].ClearImage(1.0f);
 	mPresentableImageArray[nextImage].CopyImageData(*mImage);
@@ -168,18 +169,9 @@ SyncedPresentable VulkanDevice::GetNextPresentable()
 		EngineLog("Queue submission failed.");
 	}
 
-	return nextPresentable;
+	AddToPresentQueue(nextPresentable);
 }
 
-
-
-
-
-void VulkanDevice::AddPresentableIndex(SyncedPresentable freeImage)
-{
-	mPresentableImageArray[freeImage.mEngineImageIndex].SetLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-	mAvailableImageIndicesArray.push_back(freeImage);
-}
 
 
 
@@ -190,3 +182,52 @@ void VulkanDevice::CreateMemoryManager()
 }
 
 
+
+
+
+void VulkanDevice::AddToAvailableQueue(SyncedPresentable freeImage)
+{
+	mPresentableImageArray[freeImage.mEngineImageIndex].SetLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+
+	std::lock_guard<std::mutex> lock(mAvailableImageIndicesArrayLock);
+	mAvailableImageIndicesArray.push_back(freeImage);
+}
+
+
+
+
+
+SyncedPresentable VulkanDevice::GetFromAvailableQueue()
+{
+	std::lock_guard<std::mutex> lock(mAvailableImageIndicesArrayLock);
+
+	SyncedPresentable nextPresentable = mAvailableImageIndicesArray.front();
+	mAvailableImageIndicesArray.pop_front();
+
+	return nextPresentable;
+}
+
+
+
+
+
+void VulkanDevice::AddToPresentQueue(SyncedPresentable addPresentable)
+{
+	std::lock_guard<std::mutex> lock(mPresentablesImageIndicesArrayLock);
+
+	mPresentableImageIndicesArray.push_back(addPresentable);
+}
+
+
+
+
+
+SyncedPresentable VulkanDevice::GetFromPresentQueue()
+{
+	std::lock_guard<std::mutex> lock(mPresentablesImageIndicesArrayLock);
+
+	SyncedPresentable nextPresentable = mPresentableImageIndicesArray.front();
+	mPresentableImageIndicesArray.pop_front();
+
+	return nextPresentable;
+}

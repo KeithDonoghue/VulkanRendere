@@ -175,9 +175,11 @@ void Swapchain::Update()
 		EngineLog("Failed to acquire image");
 	}
 
-	mDevice->AddPresentableIndex(nextFreePresentable);
+	mDevice->AddToAvailableQueue(nextFreePresentable);
 
-	nextFreePresentable =  mDevice->GetNextPresentable();
+	mDevice->Update();
+	
+	nextFreePresentable = mDevice->GetFromPresentQueue();
 
 	VkPresentInfoKHR thePresentInfo;
 	memset(&thePresentInfo, 0, sizeof(VkPresentInfoKHR));
@@ -209,7 +211,7 @@ void Swapchain::Update()
 		EngineLog("Wait Idle failed.");
 	}
 
-
+#define VULKAN_FRAMERATE_LOGGER 1
 #if VULKAN_FRAMERATE_LOGGER
 	static int frames = 0;
 	static std::chrono::time_point<std::chrono::high_resolution_clock> mPrevP =
