@@ -27,18 +27,18 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 	mCreateInfo.pNext				= nullptr;
 	//mCreateInfo.flags				= 0; reserved for future use.
 	mCreateInfo.surface				= NULL; // assigned in init.
-	mCreateInfo.minImageCount		= 2;
-	mCreateInfo.imageFormat			= VK_FORMAT_B8G8R8A8_UNORM;
+	mCreateInfo.minImageCount		= 4;
+	mCreateInfo.imageFormat			= VK_FORMAT_R8G8B8A8_UNORM;
 	mCreateInfo.imageColorSpace		= VK_COLORSPACE_SRGB_NONLINEAR_KHR;
 	mCreateInfo.imageExtent			= WindowSize;
 	mCreateInfo.imageArrayLayers	= 1;
-	mCreateInfo.imageUsage			= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	mCreateInfo.imageUsage			= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	mCreateInfo.imageSharingMode	= VK_SHARING_MODE_EXCLUSIVE;
 	//mCreateInfo.queueFamilyIndexCount 
 	//mCreateInfo.pQueueFamilyIndices
 	mCreateInfo.preTransform		= VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 	mCreateInfo.compositeAlpha		= VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	mCreateInfo.presentMode			= VK_PRESENT_MODE_FIFO_KHR;
+	mCreateInfo.presentMode			= VK_PRESENT_MODE_FIFO_RELAXED_KHR;
 
 	mCreateInfo.clipped				= VK_TRUE;
 	mCreateInfo.oldSwapchain		= VK_NULL_HANDLE;
@@ -121,8 +121,8 @@ void Swapchain::GetImages()
 
 
 
-	// An aquire and a release sempahore for each image in the swapchian.
-	mNumSemaphores = SwapchainImageCount * 2;
+	// 2 aquire and a release sempahore's for each image in the swapchian, to be safe until I start syncing reuse.
+	mNumSemaphores = SwapchainImageCount * 4;
 
 
 	VkSemaphoreCreateInfo SemaphoreCreateInfo;
