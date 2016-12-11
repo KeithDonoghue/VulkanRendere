@@ -26,4 +26,9 @@ private:
 
 	uint32_t mNumSemaphores;
 	std::deque<VkSemaphore> mSemaphoreQueue;
+
+	uint32_t mMinImageCount;
+	uint32_t mSwapchainImageCount;
+
+	uint32_t mImagesHeld;
 };

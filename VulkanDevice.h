@@ -72,11 +72,14 @@ public:
 	void AddToAvailableQueue(SyncedPresentable);
 	VulkanMemMngr * GetMemManager() { return mMemoryManager;  };
 
-	SyncedPresentable GetFromAvailableQueue();
+	bool GetFromAvailableQueue(SyncedPresentable&);
 	void				AddToPresentQueue(SyncedPresentable);
-	SyncedPresentable GetFromPresentQueue();
+	bool GetFromPresentQueue(SyncedPresentable&);
 	void Update();
 
+
+	void LockQueue()	{ mQueueLock.lock() ; }
+	void UnlockQueue()	{ mQueueLock.unlock() ; }
 
 
 private:
@@ -86,6 +89,7 @@ private:
 	VkDevice TheVulkanDevice;
 	VkPhysicalDevice mPhysicalDevice;
 	VkQueue mQueue;
+	std::mutex mQueueLock;
 
 	VkDeviceQueueCreateInfo mQueueCreateInfo;
 	VkDeviceCreateInfo mCreateInfo;
@@ -102,7 +106,7 @@ private:
 	std::mutex							mAvailableImageIndicesArrayLock;
 
 	std::deque<SyncedPresentable>		mPresentableImageIndicesArray;
-	std::mutex							mPresentablesImageIndicesArrayLock;
+	std::mutex							mPresentableImageIndicesArrayLock;
 
 	// VK_KHR_swapchain function pointers
 

@@ -35,3 +35,5 @@ LoggingClass * LoggingClass::GetInstance()
 
 
 LoggingClass * LoggingClass::sInstance = nullptr;
+
+std::recursive_mutex LoggingClass::mtx;

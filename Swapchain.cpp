@@ -13,7 +13,9 @@
 Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 	mDevice(theDevice),
 	mWindow(theWindow),
-	mNumSemaphores(0)
+	mNumSemaphores(0),
+	mMinImageCount(1),
+	mImagesHeld(0)
 { 
 
 	VkExtent2D WindowSize;
@@ -28,7 +30,7 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 	//mCreateInfo.flags				= 0; reserved for future use.
 	mCreateInfo.surface				= NULL; // assigned in init.
 	mCreateInfo.minImageCount		= 4;
-	mCreateInfo.imageFormat			= VK_FORMAT_R8G8B8A8_UNORM;
+	mCreateInfo.imageFormat			= VK_FORMAT_B8G8R8A8_UNORM;
 	mCreateInfo.imageColorSpace		= VK_COLORSPACE_SRGB_NONLINEAR_KHR;
 	mCreateInfo.imageExtent			= WindowSize;
 	mCreateInfo.imageArrayLayers	= 1;
@@ -99,16 +101,15 @@ void Swapchain::init()
 
 void Swapchain::GetImages()
 {
-	uint32_t SwapchainImageCount;
-	VkResult result = vkGetSwapchainImagesKHR(mDevice->GetVkDevice(), theVulkanSwapchain, &SwapchainImageCount, nullptr);
+	VkResult result = vkGetSwapchainImagesKHR(mDevice->GetVkDevice(), theVulkanSwapchain, &mSwapchainImageCount, nullptr);
 
 	if (result != VK_SUCCESS)
 	{
 		EngineLog("Failed to get Images");
 	}
 
-	VkImage *  SwpachainImages = (VkImage*) malloc(SwapchainImageCount* sizeof(VkImage));
-	result = vkGetSwapchainImagesKHR(mDevice->GetVkDevice(), theVulkanSwapchain, &SwapchainImageCount, SwpachainImages);
+	VkImage *  SwpachainImages = (VkImage*) malloc(mSwapchainImageCount* sizeof(VkImage));
+	result = vkGetSwapchainImagesKHR(mDevice->GetVkDevice(), theVulkanSwapchain, &mSwapchainImageCount, SwpachainImages);
 
 	if (result != VK_SUCCESS)
 	{
@@ -116,13 +117,13 @@ void Swapchain::GetImages()
 	}
 	else
 	{
-		mDevice->PopulatePresentableImages(SwpachainImages, SwapchainImageCount);
+		mDevice->PopulatePresentableImages(SwpachainImages, mSwapchainImageCount);
 	}
 
 
 
 	// 2 aquire and a release sempahore's for each image in the swapchian, to be safe until I start syncing reuse.
-	mNumSemaphores = SwapchainImageCount * 4;
+	mNumSemaphores = mSwapchainImageCount * 4;
 
 
 	VkSemaphoreCreateInfo SemaphoreCreateInfo;
@@ -157,82 +158,94 @@ void Swapchain::Update()
 	SyncedPresentable nextFreePresentable;
 	uint32_t presentIndex;
 
-	nextFreePresentable.mWaitForAcquireSemaphore = mSemaphoreQueue.front();
-	mSemaphoreQueue.pop_front();
 
-	nextFreePresentable.mWaitForPresentSemaphore = mSemaphoreQueue.front();
-	mSemaphoreQueue.pop_front();
-
-	VkResult result = vkAcquireNextImageKHR(mDevice->GetVkDevice(), 
-		theVulkanSwapchain, 
-		UINT64_MAX, 
-		nextFreePresentable.mWaitForAcquireSemaphore, 
-		VK_NULL_HANDLE, 
-		&nextFreePresentable.mEngineImageIndex);
-
-	if (result != VK_SUCCESS)
+	// Only attempt to acquire an image if were not holding them all.
+	if (mSwapchainImageCount - mMinImageCount + 1 > mImagesHeld)
 	{
-		EngineLog("Failed to acquire image");
+		nextFreePresentable.mWaitForAcquireSemaphore = mSemaphoreQueue.front();
+		mSemaphoreQueue.pop_front();
+
+		nextFreePresentable.mWaitForPresentSemaphore = mSemaphoreQueue.front();
+		mSemaphoreQueue.pop_front();
+
+		mDevice->LockQueue();
+		VkResult result = vkAcquireNextImageKHR(mDevice->GetVkDevice(),
+			theVulkanSwapchain,
+			100,
+			nextFreePresentable.mWaitForAcquireSemaphore,
+			VK_NULL_HANDLE,
+			&nextFreePresentable.mEngineImageIndex);
+		mDevice->UnlockQueue();
+
+		if (result != VK_SUCCESS)
+		{
+			mSemaphoreQueue.push_front(nextFreePresentable.mWaitForPresentSemaphore);
+			mSemaphoreQueue.push_front(nextFreePresentable.mWaitForAcquireSemaphore);
+			EngineLog("Failed to acquire image");
+		}
+		else
+		{
+			mDevice->AddToAvailableQueue(nextFreePresentable);
+			mImagesHeld++;
+		}
+
 	}
-
-	mDevice->AddToAvailableQueue(nextFreePresentable);
-
-	mDevice->Update();
 	
-	nextFreePresentable = mDevice->GetFromPresentQueue();
+	bool PresentableIsReady = mDevice->GetFromPresentQueue(nextFreePresentable);
 
-	VkPresentInfoKHR thePresentInfo;
-	memset(&thePresentInfo, 0, sizeof(VkPresentInfoKHR));
-	thePresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	thePresentInfo.pNext = nullptr;
-	thePresentInfo.waitSemaphoreCount = 1;
-	thePresentInfo.pWaitSemaphores = &nextFreePresentable.mWaitForPresentSemaphore;
-	thePresentInfo.swapchainCount = 1;
-	thePresentInfo.pSwapchains = &theVulkanSwapchain;
-	thePresentInfo.pImageIndices = &nextFreePresentable.mEngineImageIndex;
-
-	result = vkQueuePresentKHR(mDevice->GetVkQueue(), &thePresentInfo);
-
-
-	if (result != VK_SUCCESS)
+	if (PresentableIsReady)
 	{
-		EngineLog("Failed to present Image");
-	}
+		VkPresentInfoKHR thePresentInfo;
+		memset(&thePresentInfo, 0, sizeof(VkPresentInfoKHR));
+		thePresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		thePresentInfo.pNext = nullptr;
+		thePresentInfo.waitSemaphoreCount = 1;
+		thePresentInfo.pWaitSemaphores = &nextFreePresentable.mWaitForPresentSemaphore;
+		thePresentInfo.swapchainCount = 1;
+		thePresentInfo.pSwapchains = &theVulkanSwapchain;
+		thePresentInfo.pImageIndices = &nextFreePresentable.mEngineImageIndex;
+
+		mDevice->LockQueue();
+		VkResult result = vkQueuePresentKHR(mDevice->GetVkQueue(), &thePresentInfo);
+		mDevice->UnlockQueue();
+
+		mImagesHeld--;
+
+		if (result != VK_SUCCESS)
+		{
+			EngineLog("Failed to present Image");
+		}
 
 
-	mSemaphoreQueue.push_back(nextFreePresentable.mWaitForAcquireSemaphore);
-	mSemaphoreQueue.push_back(nextFreePresentable.mWaitForPresentSemaphore);
+		mSemaphoreQueue.push_back(nextFreePresentable.mWaitForAcquireSemaphore);
+		mSemaphoreQueue.push_back(nextFreePresentable.mWaitForPresentSemaphore);
 
-	
-	//result = vkQueueWaitIdle(mDevice->GetVkQueue());
 
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Wait Idle failed.");
-	}
 
 #define VULKAN_FRAMERATE_LOGGER 1
 #if VULKAN_FRAMERATE_LOGGER
-	static int frames = 0;
-	static std::chrono::time_point<std::chrono::high_resolution_clock> mPrevP =
-		std::chrono::high_resolution_clock::now();
+		static int frames = 0;
+		static std::chrono::time_point<std::chrono::high_resolution_clock> mPrevP =
+			std::chrono::high_resolution_clock::now();
 
-	static std::chrono::time_point<std::chrono::high_resolution_clock> mCurrP;
-	
-	frames++;
+		static std::chrono::time_point<std::chrono::high_resolution_clock> mCurrP;
 
-	if (frames > 0 )
-	{
-		mCurrP = std::chrono::high_resolution_clock::now();
+		frames++;
 
-		uint64_t duration = std::chrono::duration_cast<std::chrono::microseconds>(mCurrP - mPrevP).count();
+		if (frames > 0)
+		{
+			mCurrP = std::chrono::high_resolution_clock::now();
 
-		mPrevP = mCurrP;
-		float frameRate = 1000000.0 / duration;
+			uint64_t duration = std::chrono::duration_cast<std::chrono::microseconds>(mCurrP - mPrevP).count();
 
-		EngineLog("Frame time: ", duration);
-		EngineLog("Frame rate: ", frameRate);
-		frames = 0;
-	}
+			mPrevP = mCurrP;
+			float frameRate = 1000000.0 / duration;
+
+			EngineLog("Frame time: ", duration);
+			EngineLog("Frame rate: ", frameRate);
+			frames = 0;
+		}
 #endif
+
+	}
 }

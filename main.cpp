@@ -34,6 +34,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Mine.DumpSurfaceInfoToFile();
 	Mine.CreateSwapchain();
 
+	Mine.SpawnUpdateThread();
 
 
 	bool Quit = false;

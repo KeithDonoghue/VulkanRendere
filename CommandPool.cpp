@@ -33,6 +33,20 @@ mDevice(theVulkanDevice)
 
 CommandPool::~CommandPool()
 {
+	while (!mFreeStack.empty())
+	{
+		auto it = mFreeStack.top();
+		delete it;
+		mFreeStack.pop();
+	}
+
+	for (auto it : mPendingList)
+	{
+		delete it;
+	}
+
+	delete mCurrentCommandBuffer;
+
 	vkDestroyCommandPool(mDevice->GetVkDevice(), m_TheVulkanCommandPool, nullptr);
 }
 

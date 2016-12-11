@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <thread>
+#include <atomic>
 
 class EngineWindow;
 class Swapchain;
@@ -49,6 +51,8 @@ public:
 	void GetSurfaceCapabilities();
 	void DumpSurfaceInfoToFile();
 	void CreateSwapchain();
+	void SpawnUpdateThread();
+	void Update();
 
 
 
@@ -59,8 +63,18 @@ public:
 
 private:
 	std::string name;
+
 	std::ofstream mLogFile;
 	std::ofstream mInformationLogFile;
+	std::ofstream mMemLogFile;
+	std::ofstream mLoaderLogFile;
+	std::ofstream mErrorLogFile;
+	std::ofstream mPerfLogFile;
+
+
+	std::thread mRenderThread;
+	std::atomic<bool> mFinish;
+
 	EngineWindow *	m_TheWindow;
 	Swapchain * m_TheSwapchain;
 	VulkanDevice *  m_TheVulkanDevice;
@@ -70,6 +84,9 @@ private:
 
 	std::vector<std::string>		m_EnabledInstanceExtensions;
 	std::vector<std::string>		m_EnabledInstanceLayers;
+
+	VkSurfaceCapabilitiesKHR		mSurfaceCapabilities;
+
 	
 	VkInstance  TheVulkanInstance ;
 
@@ -96,6 +113,15 @@ private:
 	VkDebugReportCallbackEXT m_callback;
 	VkDebugReportCallbackEXT m_InformationCallback;
 
+	friend VKAPI_ATTR VkBool32 VKAPI_CALL FirstAllPurposeDebugReportCallback(
+		VkDebugReportFlagsEXT       flags,
+		VkDebugReportObjectTypeEXT  objectType,
+		uint64_t                    object,
+		size_t                      location,
+		int32_t                     messageCode,
+		const char*                 pLayerPrefix,
+		const char*                 pMessage,
+		void*                       pUserData);
 };
 
 

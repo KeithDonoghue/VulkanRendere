@@ -2,6 +2,7 @@
 #include "ApiUsageHeader.h"
 #define VK_USE_PLATFORM_WIN32_KHR 1
 
+#define ENGINE_LOGGING_ENABLED 1
 #include "EngineLogging.h"
 
 
@@ -17,30 +18,52 @@
 #include <algorithm>
 #include <iostream> 
 #include <fstream>
+#include <thread>
 
 
 // MS-Windows event handling function:
 
-MyEngine::MyEngine() :name("TheEngine")
+MyEngine::MyEngine() :name("TheEngine"),
+mFinish(false)
 {
-	mLogFile.open(name + "Log.txt");
-	mInformationLogFile.open(name + "ObjectLog.txt");
+	mLogFile.open("DebugReportLogs/" + name +"Log.txt");
+	mLoaderLogFile.open("DebugReportLogs/" + name + "LoaderLog.txt");
+	mMemLogFile.open("DebugReportLogs/" + name + "MemoryLog.txt");
+	mErrorLogFile.open("DebugReportLogs/" + name + "ErrorLog.txt");
+	mPerfLogFile.open("DebugReportLogs/" + name + "PerfLog.txt");
+
+	mInformationLogFile.open("DebugReportLogs/" + name + "InformationLog.txt");
 	mInformationLogFile << "Creating" << std::endl;
 }
 
 
+
+
+
 MyEngine::~MyEngine()
 {
+	mFinish = true;
+	mRenderThread.join();
+
 	delete m_TheSwapchain;
 	delete m_TheWindow;
 	delete m_TheVulkanDevice;
 
+
 	DestroyDebugReportStuff();
 	vkDestroyInstance(TheVulkanInstance, nullptr);
+
+	mLoaderLogFile.close();
+	mMemLogFile.close();
 	mLogFile.close();
 	mInformationLogFile.close();
-	EngineLog("44", 6);
+	mErrorLogFile.close();
+	mPerfLogFile.close();
 }
+
+
+
+
 
 void MyEngine::SetWindowOffsetAndSize(int x, int y, int width, int height)
 {
@@ -49,6 +72,8 @@ void MyEngine::SetWindowOffsetAndSize(int x, int y, int width, int height)
 		m_TheWindow = new EngineWindow(x, y, width, height);
 	}
 }
+
+
 
 
 
@@ -90,7 +115,7 @@ void MyEngine::SetUpDebugReportStuff()
 			VK_DEBUG_REPORT_ERROR_BIT_EXT |
 			VK_DEBUG_REPORT_DEBUG_BIT_EXT;
 			DebugCallbackCreateinfo.pfnCallback = &FirstAllPurposeDebugReportCallback;
-		DebugCallbackCreateinfo.pUserData = &mLogFile;
+		DebugCallbackCreateinfo.pUserData = this;
 
 	/* Register the callback */
 	VkResult result = fpCreateDebugReportCallback(TheVulkanInstance, &DebugCallbackCreateinfo, nullptr, &m_callback);
@@ -100,7 +125,7 @@ void MyEngine::SetUpDebugReportStuff()
 	}
 
 	DebugCallbackCreateinfo.flags = VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
-	DebugCallbackCreateinfo.pUserData = &mInformationLogFile;
+	DebugCallbackCreateinfo.pUserData = this;
 
 
 
@@ -112,6 +137,10 @@ void MyEngine::SetUpDebugReportStuff()
 	}
 }
 
+
+
+
+
 void MyEngine::DestroyDebugReportStuff()
 {
 	fpDestroyDebugReportCallback(TheVulkanInstance, m_callback, nullptr);
@@ -119,6 +148,9 @@ void MyEngine::DestroyDebugReportStuff()
 
 
 }
+
+
+
 
 
 void MyEngine::SelectPhysicalDevice()
@@ -180,6 +212,10 @@ void MyEngine::SelectPhysicalDevice()
 	
 	}
 }
+
+
+
+
 
 void MyEngine::InitLayersAndExtensions()
 {
@@ -249,6 +285,10 @@ void MyEngine::InitLayersAndExtensions()
 }
 
 
+
+
+
+
 void MyEngine::CreateVulkanInstance()
 {
 
@@ -264,9 +304,9 @@ void MyEngine::CreateVulkanInstance()
 	for (int i = 0; i < m_AvailableExtensionNames.size(); i++)
 	UsingExtensions.push_back(m_AvailableExtensionNames[i].c_str());
 	*/
-	//UsingLayers.push_back("VK_LAYER_LUNARG_api_dump");
+	UsingLayers.push_back("VK_LAYER_LUNARG_api_dump");
 
-	//UsingLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+	UsingLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 
 
 	UsingExtensions.push_back("VK_KHR_win32_surface");
@@ -295,6 +335,10 @@ void MyEngine::CreateVulkanInstance()
 		OutputDebugString(str);
 	}
 }
+
+
+
+
 
 void MyEngine::DoPhysicalDeviceStuff()
 {
@@ -347,16 +391,26 @@ void MyEngine::CreateGameWindow(HINSTANCE Appinstance)
 #endif
 }
 
+
+
+
+
 void MyEngine::FinishedFrameWork()
 {
 	m_TheWindow->Update();
 }
 
 
+
+
+
 void MyEngine::GetSurfaceCapabilities()
 {
 
 }
+
+
+
 
 
 void MyEngine::DumpSurfaceInfoToFile()
@@ -374,12 +428,11 @@ void MyEngine::DumpSurfaceInfoToFile()
 		Log << "Presenting NOT supported! boo!" << std::endl;
 
 
-	VkSurfaceCapabilitiesKHR surfaceCapabilities;
-	memset(&surfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
+	memset(&mSurfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
 
 	result = fpGetPhysicalDeviceSurfaceCapabilitiesKHR(m_AvailablePhysicalDevices[0],
 		m_TheWindow->GetSurface(),
-		&surfaceCapabilities);
+		&mSurfaceCapabilities);
 
 	if (result != VK_SUCCESS)
 	{
@@ -389,24 +442,24 @@ void MyEngine::DumpSurfaceInfoToFile()
 	{
 		Log << "Device 0 Capabalities:" << std::endl;
 		Log << std::endl;
-		Log << "	uint32_t minImageCount: " << surfaceCapabilities.minImageCount << std::endl;
-		Log << "	uint32_t maxImageCount:	" << surfaceCapabilities.maxImageCount << std::endl;
+		Log << "	uint32_t minImageCount: " << mSurfaceCapabilities.minImageCount << std::endl;
+		Log << "	uint32_t maxImageCount:	" << mSurfaceCapabilities.maxImageCount << std::endl;
 		Log << "	VkExtent2D currentExtent : " << std::endl;
-		Log << "		width: " << surfaceCapabilities.currentExtent.width << std::endl;
-		Log << "		height: " << surfaceCapabilities.currentExtent.height << std::endl;
+		Log << "		width: " << mSurfaceCapabilities.currentExtent.width << std::endl;
+		Log << "		height: " << mSurfaceCapabilities.currentExtent.height << std::endl;
 		Log << "	VkExtent2D minImageExtent : " << std::endl;
-		Log << "		width: " << surfaceCapabilities.minImageExtent.width << std::endl;
-		Log << "		height: " << surfaceCapabilities.minImageExtent.height << std::endl;
+		Log << "		width: " << mSurfaceCapabilities.minImageExtent.width << std::endl;
+		Log << "		height: " << mSurfaceCapabilities.minImageExtent.height << std::endl;
 		Log << "	VkExtent2D maxImageExtent : " << std::endl;
-		Log << "		width: " << surfaceCapabilities.maxImageExtent.width << std::endl;
-		Log << "		height: " << surfaceCapabilities.maxImageExtent.height << std::endl;
-		Log << "	uint32_t maxImageArrayLayers: " << surfaceCapabilities.maxImageArrayLayers << std::endl;
+		Log << "		width: " << mSurfaceCapabilities.maxImageExtent.width << std::endl;
+		Log << "		height: " << mSurfaceCapabilities.maxImageExtent.height << std::endl;
+		Log << "	uint32_t maxImageArrayLayers: " << mSurfaceCapabilities.maxImageArrayLayers << std::endl;
 
 
-		Log << "	VkSurfaceTransformFlagBitsKHR supportedTransforms: " << surfaceCapabilities.supportedTransforms << std::endl;
-		Log << "	VkSurfaceTransformFlagBitsKHR currentTransform: " << surfaceCapabilities.currentTransform << std::endl;
-		Log << "	VkCompositeAlphaFlagsKHR supportedCompositeAlpha: " << surfaceCapabilities.supportedCompositeAlpha << std::endl;
-		Log << "	VkImageUsageFlags supportedUsageFlags: " << surfaceCapabilities.supportedUsageFlags << std::endl;
+		Log << "	VkSurfaceTransformFlagBitsKHR supportedTransforms: " << mSurfaceCapabilities.supportedTransforms << std::endl;
+		Log << "	VkSurfaceTransformFlagBitsKHR currentTransform: " << mSurfaceCapabilities.currentTransform << std::endl;
+		Log << "	VkCompositeAlphaFlagsKHR supportedCompositeAlpha: " << mSurfaceCapabilities.supportedCompositeAlpha << std::endl;
+		Log << "	VkImageUsageFlags supportedUsageFlags: " << mSurfaceCapabilities.supportedUsageFlags << std::endl;
 	}
 
 	uint32_t surfaceFormatCount;
@@ -498,46 +551,84 @@ VKAPI_ATTR VkBool32 VKAPI_CALL FirstAllPurposeDebugReportCallback(
 	const char*                 pMessage,
 	void*                       pUserData)
 {
-	std::ofstream * TheLogFile = static_cast<std::ofstream*>(pUserData);
+	MyEngine * theEngine = static_cast<MyEngine*>(pUserData);
 
-	*TheLogFile << std::endl << "Hello" << std::endl;
+	if (memcmp(pLayerPrefix, "MEM", 3) == 0)
+	{
+		theEngine->mMemLogFile << std::endl << "#####################" << std::endl;
+		theEngine->mMemLogFile << pMessage << std::endl;
+		return VK_FALSE;
+
+	}
+
+	if (memcmp(pLayerPrefix, "loader", 6) == 0)
+	{
+		theEngine->mLoaderLogFile << std::endl << "#####################" << std::endl;
+		theEngine->mLoaderLogFile << pMessage << std::endl;
+		return VK_FALSE;
+	}
+
 	switch (flags)
 	{
 		case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
 		{
-			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_INFORMATION_BIT_EXT" << std::endl;
-
-			if (memcmp(pLayerPrefix, "MEM", 3) == 0)
-			{
-				std::cout << "Dummy For breakpoint." << std::endl;
-			}
+			theEngine->mInformationLogFile << std::endl << "###################################### VK_DEBUG_REPORT_INFORMATION_BIT_EXT" << std::endl;
+			theEngine->mInformationLogFile << pLayerPrefix << std::endl;
+			theEngine->mInformationLogFile << pMessage << std::endl;
 			break;
 		}
 		case VK_DEBUG_REPORT_WARNING_BIT_EXT:
 		{
-			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_WARNING_BIT_EXT" << std::endl;
+			theEngine->mLogFile << std::endl << "###################################### VK_DEBUG_REPORT_WARNING_BIT_EXT" << std::endl;
+			theEngine->mLogFile << pLayerPrefix << std::endl;
+			theEngine->mLogFile << pMessage << std::endl;
+
 			break;
 		}
 		case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
 		{
-			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT" << std::endl;
+			theEngine->mPerfLogFile << std::endl << "###################################### VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT" << std::endl;
+			theEngine->mPerfLogFile << pLayerPrefix << std::endl;
+			theEngine->mPerfLogFile << pMessage << std::endl;
 			break;
 		}
 		case VK_DEBUG_REPORT_ERROR_BIT_EXT:
 		{
-			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_ERROR_BIT_EXT" << std::endl;
+			theEngine->mErrorLogFile << std::endl << "###################################### VK_DEBUG_REPORT_ERROR_BIT_EXT" << std::endl;
+			theEngine->mErrorLogFile << pLayerPrefix << std::endl;
+			theEngine->mErrorLogFile << pMessage << std::endl;
+
 			break;
 		}
 		case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
 		{
-			*TheLogFile << "Inside FirstAllPurposeDebugReportCallback VK_DEBUG_REPORT_DEBUG_BIT_EXT " << location << " " << objectType << std::endl;
+			theEngine->mLogFile << std::endl << "###################################### VK_DEBUG_REPORT_DEBUG_BIT_EXT " << location << " " << objectType << std::endl;
+			theEngine->mLogFile << pLayerPrefix << std::endl;
+			theEngine->mLogFile << pMessage << std::endl;
 			break;
 		}
 	}
 
-	*TheLogFile <<  pLayerPrefix << std::endl;
-	*TheLogFile <<  pMessage << std::endl;
-	*TheLogFile <<  "Goodbye" << std::endl;
-
+	
 	return VK_FALSE;
+}
+
+
+
+
+
+void MyEngine::SpawnUpdateThread()
+{
+	mRenderThread =  std::thread(&MyEngine::Update, std::ref(*this));
+}
+
+
+
+
+void MyEngine::Update()
+{
+	while(!mFinish)
+	{
+		m_TheVulkanDevice->Update();
+	}
 }

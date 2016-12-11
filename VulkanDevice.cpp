@@ -20,7 +20,7 @@ mPhysicalDevice(thePhysicalDevice)
 	VkDeviceQueueCreateInfo QueueCreateInfo;
 	memset(&QueueCreateInfo, 0, sizeof(QueueCreateInfo));
 
-	float queuePriorities = 1.0f;
+	float queuePriorities= 1.0f;
 
 	QueueCreateInfo.pNext = NULL;
 	QueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -75,9 +75,27 @@ mPhysicalDevice(thePhysicalDevice)
 
 VulkanDevice::~VulkanDevice()
 {
+	vkDeviceWaitIdle(TheVulkanDevice);
+
 	delete mImage;
 	delete mCommandPool;
 	delete mMemoryManager;
+
+	std::lock_guard<std::mutex> lock1(mAvailableImageIndicesArrayLock);
+	std::lock_guard<std::mutex> lock2(mPresentableImageIndicesArrayLock);
+
+	for (SyncedPresentable it : mAvailableImageIndicesArray)
+	{
+		vkDestroySemaphore(TheVulkanDevice, it.mWaitForAcquireSemaphore, nullptr);
+		vkDestroySemaphore(TheVulkanDevice, it.mWaitForPresentSemaphore, nullptr);
+	}
+
+	for (SyncedPresentable it : mPresentableImageIndicesArray)
+	{
+		vkDestroySemaphore(TheVulkanDevice, it.mWaitForAcquireSemaphore, nullptr);
+		vkDestroySemaphore(TheVulkanDevice, it.mWaitForPresentSemaphore, nullptr);
+	}
+
 	vkDestroyDevice(TheVulkanDevice, nullptr);
 }
 
@@ -127,7 +145,12 @@ void VulkanDevice::Update()
 {
 
 	CommandBuffer * currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
-	SyncedPresentable nextPresentable = GetFromAvailableQueue();
+	SyncedPresentable nextPresentable;
+	bool isPresentableReady = GetFromAvailableQueue(nextPresentable);
+
+	if (!isPresentableReady)
+		return;
+
 	uint32_t nextImage = nextPresentable.mEngineImageIndex;
 
 	if (!ImageCreated)
@@ -159,8 +182,10 @@ void VulkanDevice::Update()
 	theSubmitInfo.pSignalSemaphores = &nextPresentable.mWaitForPresentSemaphore;
 
 	currentCommandBuffer->EndCommandBuffer();
-		
+	
+	LockQueue();
 	VkResult  result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, currentCommandBuffer->GetCompletionFence());
+	UnlockQueue();
 
 	mCommandPool->NextCmdBuffer();
 
@@ -197,14 +222,20 @@ void VulkanDevice::AddToAvailableQueue(SyncedPresentable freeImage)
 
 
 
-SyncedPresentable VulkanDevice::GetFromAvailableQueue()
+bool VulkanDevice::GetFromAvailableQueue( SyncedPresentable& nextPresentable)
 {
+	bool imageAvailable = false;
+
 	std::lock_guard<std::mutex> lock(mAvailableImageIndicesArrayLock);
 
-	SyncedPresentable nextPresentable = mAvailableImageIndicesArray.front();
-	mAvailableImageIndicesArray.pop_front();
+	if (!mAvailableImageIndicesArray.empty())
+	{
+		nextPresentable = mAvailableImageIndicesArray.front();
+		mAvailableImageIndicesArray.pop_front();
+		imageAvailable = true;
+	}
 
-	return nextPresentable;
+	return imageAvailable;
 }
 
 
@@ -213,7 +244,7 @@ SyncedPresentable VulkanDevice::GetFromAvailableQueue()
 
 void VulkanDevice::AddToPresentQueue(SyncedPresentable addPresentable)
 {
-	std::lock_guard<std::mutex> lock(mPresentablesImageIndicesArrayLock);
+	std::lock_guard<std::mutex> lock(mPresentableImageIndicesArrayLock);
 
 	mPresentableImageIndicesArray.push_back(addPresentable);
 }
@@ -222,12 +253,18 @@ void VulkanDevice::AddToPresentQueue(SyncedPresentable addPresentable)
 
 
 
-SyncedPresentable VulkanDevice::GetFromPresentQueue()
+bool VulkanDevice::GetFromPresentQueue(SyncedPresentable& nextPresentable)
 {
-	std::lock_guard<std::mutex> lock(mPresentablesImageIndicesArrayLock);
+	bool presentableAvailable = false;
 
-	SyncedPresentable nextPresentable = mPresentableImageIndicesArray.front();
-	mPresentableImageIndicesArray.pop_front();
+	std::lock_guard<std::mutex> lock(mPresentableImageIndicesArrayLock);
 
-	return nextPresentable;
+	if (!mPresentableImageIndicesArray.empty())
+	{
+		nextPresentable = mPresentableImageIndicesArray.front();
+		mPresentableImageIndicesArray.pop_front();
+		presentableAvailable = true;
+	}
+
+	return presentableAvailable;
 }
