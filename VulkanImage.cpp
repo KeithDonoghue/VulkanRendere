@@ -18,36 +18,38 @@
 VulkanImage::VulkanImage(VulkanDevice * theDevice, VkImage theImage, bool systemManaged) :
 mDevice(theDevice),
 m_TheVulkanImage(theImage),
-mSystemManaged(systemManaged)
+mSystemManaged(systemManaged),
+mType(VULKAN_IMAGE_COLOR_RGBA8)
 {}
 
 
 
 
 
-VulkanImage::VulkanImage(VulkanDevice * theDevice, int width, int height):
+VulkanImage::VulkanImage(VulkanDevice * theDevice, int width, int height, ImageType type):
 mCreateInfo{},
 mExtent{},
-mDevice(theDevice)
+mDevice(theDevice),
+mType(type)
 {
 	mExtent = { width, height, 1 };
 	mCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	mCreateInfo.pNext = nullptr;
 	mCreateInfo.flags = 0;
 	mCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-	mCreateInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+	mCreateInfo.format = GetFormat();
 	mCreateInfo.extent = mExtent;
 	mCreateInfo.mipLevels = 1;
 	mCreateInfo.arrayLayers = 1;
 	mCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	mCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	mCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	mCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | GetUsageForType(type);
 	mCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	mCreateInfo.queueFamilyIndexCount = 0;
 	mCreateInfo.pQueueFamilyIndices = nullptr;
 	mCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-	VkResult result = vkCreateImage(mDevice->GetVkDevice(), &mCreateInfo, nullptr, &m_TheVulkanImage);
+	VkResult result = vkCreateImage(mDevice->getVkDevice(), &mCreateInfo, nullptr, &m_TheVulkanImage);
 
 	if (result != VK_SUCCESS)
 	{
@@ -58,11 +60,11 @@ mDevice(theDevice)
 	mCurrentLayout = mCreateInfo.initialLayout;
 
 	VkMemoryRequirements memoryRequirements = {};
-	vkGetImageMemoryRequirements(mDevice->GetVkDevice(), m_TheVulkanImage, &memoryRequirements);
+	vkGetImageMemoryRequirements(mDevice->getVkDevice(), m_TheVulkanImage, &memoryRequirements);
 
 	mAllocStruct = mDevice->GetMemManager()->GetAllocation(memoryRequirements);
 
-	result = vkBindImageMemory(mDevice->GetVkDevice(), m_TheVulkanImage, mAllocStruct.mPointer, mAllocStruct.mOffset);
+	result = vkBindImageMemory(mDevice->getVkDevice(), m_TheVulkanImage, mAllocStruct.mPointer, mAllocStruct.mOffset);
 
 	if (result != VK_SUCCESS)
 	{
@@ -81,7 +83,7 @@ VulkanImage::~VulkanImage()
 		vkQueueWaitIdle(mDevice->GetVkQueue());
 		delete mStagingBuffer;
 		mDevice->GetMemManager()->FreeAllocation(mAllocStruct);
-		vkDestroyImage(mDevice->GetVkDevice(), m_TheVulkanImage, nullptr);
+		vkDestroyImage(mDevice->getVkDevice(), m_TheVulkanImage, nullptr);
 	}
 }
 
@@ -89,32 +91,73 @@ VulkanImage::~VulkanImage()
 
 
 
-void VulkanImage::ClearImage(float green)
+void VulkanImage::ClearImage(float value)
 {
+	VkImageSubresourceRange subRange = {};
 
-	VkImageSubresourceRange subRange;
-	memset(&subRange, 0, sizeof(VkImageSubresourceRange));
-
-	subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	subRange.baseMipLevel = 0;
 	subRange.levelCount = 1;
 	subRange.baseArrayLayer = 0;
 	subRange.layerCount = 1;
 
+
 	// May need Image Layouot conversion, memory barrier or queue family transfer.
-	InsertImageMemoryBarrier(subRange, VK_IMAGE_LAYOUT_GENERAL);
+	if (mType == ImageType::VULKAN_IMAGE_COLOR_RGBA8)
+	{
+		ClearColourImage(subRange, value);
+	}
+	else if (mType == ImageType::VULKAN_IMAGE_DEPTH)
+	{
+		ClearDepthImage(subRange, value);
+	}
+	else
+	{
+		EngineLog("Error, unknown ImageType");
+	}
+}
+
+
+
+
+
+void VulkanImage::ClearColourImage(VkImageSubresourceRange& subRange, float value)
+{
+
+	subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+	TransitionToClearable(subRange);
 
 
 	VkClearColorValue clearColour;
 	memset(&clearColour, 0, sizeof(VkClearColorValue));
-	clearColour.float32[0] = 1.0f;
-	clearColour.float32[1] = green;
-	clearColour.float32[2] = 0.0f;
+	clearColour.float32[0] = value;
+	clearColour.float32[1] = value;
+	clearColour.float32[2] = value;
 	clearColour.float32[3] = 0.0f;
 
 	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool()->GetCurrentCommandBuffer();
 
-	vkCmdClearColorImage(currentCommandBuffer->GetVkCommandBuffer(), GetVkImage(), VK_IMAGE_LAYOUT_GENERAL, &clearColour, 1, &subRange);
+	vkCmdClearColorImage(currentCommandBuffer->GetVkCommandBuffer(), GetVkImage(), GetLayout(), &clearColour, 1, &subRange);
+
+}
+
+
+
+
+
+void VulkanImage::ClearDepthImage(VkImageSubresourceRange& subRange, float value)
+{
+	subRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+	TransitionToClearable(subRange);
+
+
+	VkClearDepthStencilValue clearValue = {};
+	clearValue.depth = value;
+	
+	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool()->GetCurrentCommandBuffer();
+
+	vkCmdClearDepthStencilImage(currentCommandBuffer->GetVkCommandBuffer(), GetVkImage(), GetLayout(), &clearValue, 1, &subRange);
 }
 
 
@@ -132,21 +175,15 @@ void VulkanImage::InsertImageMemoryBarrier(VkImageSubresourceRange& subRange, Vk
 
 	//Currently only 1 clear value.
 
-	VkAccessFlags flags = {};
-	if (newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-		flags = VK_ACCESS_TRANSFER_WRITE_BIT;
+	VkAccessFlags dstFlags = GetAccessFlags(newLayout);
+	VkAccessFlags srcFlags = GetAccessFlags(GetLayout());
 
-	if (newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-		flags = VK_ACCESS_TRANSFER_READ_BIT;
+	VkImageMemoryBarrier memoryBarrier = {};
 
-
-
-	VkImageMemoryBarrier memoryBarrier;
-	memset(&memoryBarrier, 0, sizeof(VkImageMemoryBarrier));
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	memoryBarrier.pNext = nullptr;
-	memoryBarrier.srcAccessMask = 0;
-	memoryBarrier.dstAccessMask = flags;
+	memoryBarrier.srcAccessMask = srcFlags;
+	memoryBarrier.dstAccessMask = dstFlags;
 	memoryBarrier.oldLayout = GetLayout();
 	memoryBarrier.newLayout = newLayout;
 	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -224,7 +261,6 @@ void VulkanImage::CopyImageData(VulkanImage& src)
 void VulkanImage::LoadDataToImage()
 {
 
-	mStagingBuffer = new VulkanBuffer(mDevice);
 
 	int x, y, n;
 	unsigned char * data = stbi_load("Resources/jpeg_bad.jpg", &x, &y, &n, 4);
@@ -236,8 +272,10 @@ void VulkanImage::LoadDataToImage()
 	{
 		memset(pointer + i, 255, 1);
 	}
-	
-	mStagingBuffer->LoadBufferData(data, x*y * 4);
+
+	mStagingBuffer = VulkanBuffer::CreateStagingBuffer(mDevice, x*y*4);
+
+	mStagingBuffer->LoadBufferData(data, x*y*4);
 
 
 	stbi_image_free(data);
@@ -280,3 +318,80 @@ void VulkanImage::LoadDataToImage()
 
 
 
+VkFormat VulkanImage::GetFormatForType(ImageType type)
+{
+	static VkFormat FormatMap[ImageType::VULKAN_IMAGE_RANGE_SIZE] =
+	{
+		VK_FORMAT_B8G8R8A8_UNORM,
+		VK_FORMAT_D16_UNORM
+	};
+
+	return FormatMap[type];
+}
+
+
+
+
+
+VkFormat VulkanImage::GetFormat()
+{
+	return GetFormatForType(mType);
+}
+
+
+
+
+
+VkImageUsageFlags VulkanImage::GetUsageForType(ImageType type)
+{
+	static VkImageUsageFlags UsageBitsMap[ImageType::VULKAN_IMAGE_RANGE_SIZE] =
+	{
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+		VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+	};
+
+	return UsageBitsMap[type];
+}
+
+
+
+
+
+void VulkanImage::TransitionToClearable(VkImageSubresourceRange& subRange)
+{
+	if (GetLayout() == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ||
+		GetLayout() == VK_IMAGE_LAYOUT_GENERAL)
+	{
+		return;
+	}
+
+	InsertImageMemoryBarrier(subRange, VK_IMAGE_LAYOUT_GENERAL);
+}
+
+
+
+
+
+VkAccessFlags VulkanImage::GetAccessFlags(VkImageLayout layout)
+{
+	if (layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+		return VK_ACCESS_MEMORY_READ_BIT;
+
+	static VkAccessFlags accessMap[VkImageLayout::VK_IMAGE_LAYOUT_RANGE_SIZE] =
+	{
+		0,
+		0,
+		VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+		VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
+		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+		0,
+		0,
+		VK_ACCESS_TRANSFER_READ_BIT,
+		VK_ACCESS_TRANSFER_WRITE_BIT,
+		0
+	};
+
+	return accessMap[layout];
+}

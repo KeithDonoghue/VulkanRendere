@@ -60,7 +60,7 @@ allocation VulkanMemMngr::GetAllocation(VkMemoryRequirements& theRequirements, b
 	mAllocateInfo.allocationSize = theRequirements.size;
 
 	VkDeviceMemory deviceMem = {};
-	VkResult result = vkAllocateMemory(mDevice->GetVkDevice(), &mAllocateInfo, nullptr, &deviceMem);
+	VkResult result = vkAllocateMemory(mDevice->getVkDevice(), &mAllocateInfo, nullptr, &deviceMem);
 
 	if (result != VK_SUCCESS)
 	{
@@ -79,7 +79,7 @@ allocation VulkanMemMngr::GetAllocation(VkMemoryRequirements& theRequirements, b
 
 void VulkanMemMngr::FreeAllocation(allocation theAllocation)
 {
-	vkFreeMemory(mDevice->GetVkDevice(), theAllocation.mPointer, nullptr);
+	vkFreeMemory(mDevice->getVkDevice(), theAllocation.mPointer, nullptr);
 }
 
 

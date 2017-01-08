@@ -2,8 +2,13 @@
 #include "VulkanImage.h"
 #include "VulkanMemoryManager.h"
 
+#include "DescriptorPool.h"
 #include "CommandPool.h"
 #include "CommandBuffer.h"
+#include "RenderPass.h"
+#include "ShaderModule.h"
+#include "VulkanPipeline.h"
+
 
 
 
@@ -66,6 +71,7 @@ mPhysicalDevice(thePhysicalDevice)
 	vkGetDeviceQueue(TheVulkanDevice, 0, 0, &mQueue);
 	CreateCommandPool();
 	CreateMemoryManager();
+	CreateDescriptorPool();
 }
 
 
@@ -77,9 +83,25 @@ VulkanDevice::~VulkanDevice()
 {
 	vkDeviceWaitIdle(TheVulkanDevice);
 
+	vkDestroySampler(getVkDevice(), theSampler, nullptr);
+	vkDestroyImageView(getVkDevice(), theView, nullptr);
+
+
+	for (size_t i = 0; i < mDepthImages.size(); i++)
+	{
+		delete mDepthImages[i];
+		delete mRenderPasses[i];
+	}
+
+	delete mVert;
+	delete mFrag;
+	delete mPipeline;
+
+
 	delete mImage;
 	delete mCommandPool;
 	delete mMemoryManager;
+	delete mDescriptorPool;
 
 	std::lock_guard<std::mutex> lock1(mAvailableImageIndicesArrayLock);
 	std::lock_guard<std::mutex> lock2(mPresentableImageIndicesArrayLock);
@@ -95,6 +117,7 @@ VulkanDevice::~VulkanDevice()
 		vkDestroySemaphore(TheVulkanDevice, it.mWaitForAcquireSemaphore, nullptr);
 		vkDestroySemaphore(TheVulkanDevice, it.mWaitForPresentSemaphore, nullptr);
 	}
+
 
 	vkDestroyDevice(TheVulkanDevice, nullptr);
 }
@@ -153,17 +176,59 @@ void VulkanDevice::Update()
 
 	uint32_t nextImage = nextPresentable.mEngineImageIndex;
 
-	if (!ImageCreated)
+	if (!inited)
 	{
-		ImageCreated = true;
-		mImage = new VulkanImage(this, 400, 400);
-		mImage->ClearImage(0.0f);
-		mImage->LoadDataToImage();
+		inited = true;
+		VkSamplerCreateInfo  samplerCreateInfo = {};
+
+		samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerCreateInfo.pNext = NULL;
+		samplerCreateInfo.magFilter = VK_FILTER_NEAREST;
+		samplerCreateInfo.minFilter = VK_FILTER_NEAREST;
+		samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+		samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerCreateInfo.mipLodBias = 0.0f;
+		samplerCreateInfo.anisotropyEnable = VK_FALSE;
+		samplerCreateInfo.maxAnisotropy = 1;
+		samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
+		samplerCreateInfo.minLod = 0.0f;
+		samplerCreateInfo.maxLod = 0.0f;
+		samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
+
+		VkResult result = vkCreateSampler(getVkDevice(), &samplerCreateInfo, nullptr, &theSampler);
+		if (result != VK_SUCCESS)
+		{
+			EngineLog("Failed to create Sampler");
+		}
+		VkImageViewCreateInfo view = {};
+		view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		view.pNext = NULL;
+		view.image = mImage->getVkImage();
+		view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		view.format = mImage->GetFormat();
+		view.components =
+		{
+			VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G,
+			VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A,
+		};
+		view.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		view.flags = 0;
+
+		result = vkCreateImageView(getVkDevice(), &view, nullptr, &theView);
+		if (result != VK_SUCCESS)
+		{
+			EngineLog("Failed to create Sampler");
+		}
+
 	}
 
 	mPresentableImageArray[nextImage].ClearImage(1.0f);
 	mPresentableImageArray[nextImage].CopyImageData(*mImage);
 
+	currentCommandBuffer->DoDraw(*mRenderPasses[nextImage], *mPipeline, *mImage, theSampler, theView);
 	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
 
 		
@@ -267,4 +332,36 @@ bool VulkanDevice::GetFromPresentQueue(SyncedPresentable& nextPresentable)
 	}
 
 	return presentableAvailable;
+}
+
+
+
+
+
+void  VulkanDevice::CreateInitialData()
+{	
+	mImage = new VulkanImage(this, 400, 400, ImageType::VULKAN_IMAGE_COLOR_RGBA8);
+
+	mImage->ClearImage(1.0f);
+	mImage->LoadDataToImage();
+
+
+	
+	for (size_t i = 0; i < mPresentableImageArray.size(); i++)
+	{
+		mDepthImages.emplace_back(new VulkanImage(this, 400, 400, ImageType::VULKAN_IMAGE_DEPTH));
+		mRenderPasses.emplace_back(new RenderPass(*this, *mDepthImages[i], mPresentableImageArray[i]));		
+	}
+
+	mVert = ShaderModule::CreateVertexShader(*this);
+	mFrag = ShaderModule::CreateFragmentShader(*this);
+	mPipeline = new VulkanPipeline(*this, *mRenderPasses[0], *mVert, *mFrag);
+}
+
+
+
+
+void VulkanDevice::CreateDescriptorPool()
+{
+	mDescriptorPool = new DescriptorPool(*this);
 }

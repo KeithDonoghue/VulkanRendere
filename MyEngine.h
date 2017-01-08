@@ -77,7 +77,7 @@ private:
 
 	EngineWindow *	m_TheWindow;
 	Swapchain * m_TheSwapchain;
-	VulkanDevice *  m_TheVulkanDevice;
+	VulkanDevice *  mVulkanDevice;
 
 	std::vector<std::string>		m_AvailableExtensionNames;
 	std::vector<std::string>		m_AvailableLayerNames;

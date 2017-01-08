@@ -3,6 +3,9 @@
 class CommandPool;
 class VulkanImage;
 class VulkanDevice;
+class RenderPass;
+class VulkanPipeline;
+class VulkanBuffer;
 
 typedef enum CommandBufferState{
 	CB_INITIAL_STATE = 0,
@@ -22,6 +25,7 @@ public:
 	VkCommandBuffer * GetVkCommandBufferAddr() { return &m_TheVulkanCommandBuffer; }
 
 	VkFence GetCompletionFence() { return mCompletionFence; }
+	CommandPool * GetPool() { return mPool; }
 	
 	
 	void GetImageReadyForPresenting(VulkanImage&);
@@ -30,6 +34,8 @@ public:
 	void BeginCommandBuffer();
 	void EndCommandBuffer();
 
+	void DoDraw(RenderPass&, VulkanPipeline&, VulkanImage&, VkSampler, VkImageView);
+
 
 private:
 	VkCommandBufferAllocateInfo mAllocateInfo;
@@ -37,4 +43,9 @@ private:
 	CommandBufferState mCommandBufferState;
 	CommandPool * mPool;
 	VkFence mCompletionFence;
+
+	bool RenderPassCreated;
+	RenderPass * theRenderPass;
+
+	VulkanBuffer * DrawBuffer;
 };

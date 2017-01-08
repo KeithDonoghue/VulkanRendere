@@ -34,7 +34,7 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 	mCreateInfo.imageColorSpace		= VK_COLORSPACE_SRGB_NONLINEAR_KHR;
 	mCreateInfo.imageExtent			= WindowSize;
 	mCreateInfo.imageArrayLayers	= 1;
-	mCreateInfo.imageUsage			= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	mCreateInfo.imageUsage			= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	mCreateInfo.imageSharingMode	= VK_SHARING_MODE_EXCLUSIVE;
 	//mCreateInfo.queueFamilyIndexCount 
 	//mCreateInfo.pQueueFamilyIndices
@@ -67,10 +67,10 @@ Swapchain::~Swapchain()
 
 	for (VkSemaphore it : mSemaphoreQueue)
 	{
-		vkDestroySemaphore(mDevice->GetVkDevice(), it, nullptr);
+		vkDestroySemaphore(mDevice->getVkDevice(), it, nullptr);
 	}
 
-	vkDestroySwapchainKHR(mDevice->GetVkDevice(), theVulkanSwapchain, nullptr);
+	vkDestroySwapchainKHR(mDevice->getVkDevice(), theVulkanSwapchain, nullptr);
 }
 
 
@@ -80,7 +80,7 @@ void Swapchain::init()
 
 	mCreateInfo.surface = mWindow->GetSurface();
 
-	VkResult result = vkCreateSwapchainKHR(mDevice->GetVkDevice(), &mCreateInfo, nullptr, &theVulkanSwapchain);
+	VkResult result = vkCreateSwapchainKHR(mDevice->getVkDevice(), &mCreateInfo, nullptr, &theVulkanSwapchain);
 
 	if (result != VK_SUCCESS)
 	{
@@ -136,7 +136,7 @@ void Swapchain::GetImages()
 	for (int i = 0; i < mNumSemaphores; i++)
 	{
 		VkSemaphore tempSemaphore;
-		result = vkCreateSemaphore(mDevice->GetVkDevice(), &SemaphoreCreateInfo, nullptr, &tempSemaphore);
+		result = vkCreateSemaphore(mDevice->getVkDevice(), &SemaphoreCreateInfo, nullptr, &tempSemaphore);
 
 		if (result != VK_SUCCESS)
 		{
@@ -169,7 +169,7 @@ void Swapchain::Update()
 		mSemaphoreQueue.pop_front();
 
 		mDevice->LockQueue();
-		VkResult result = vkAcquireNextImageKHR(mDevice->GetVkDevice(),
+		VkResult result = vkAcquireNextImageKHR(mDevice->getVkDevice(),
 			theVulkanSwapchain,
 			100,
 			nextFreePresentable.mWaitForAcquireSemaphore,

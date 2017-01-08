@@ -60,6 +60,4 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		}
 		Mine.FinishedFrameWork();
 	}
-
-
 }

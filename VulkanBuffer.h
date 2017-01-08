@@ -6,15 +6,19 @@ class VulkanDevice;
 
 class VulkanBuffer {
 public:
-	VulkanBuffer(VulkanDevice*);
+	VulkanBuffer(VulkanDevice&, VkBufferCreateInfo);
 	~VulkanBuffer();
 	VkBuffer GetVkBuffer(){ return m_TheVulkanBuffer; }
+	VkBuffer * GetVkBufferAddr(){ return &m_TheVulkanBuffer; }
 	void BindMemory();
-	void LoadBufferData(void *, uint32_t size);
+	void LoadBufferData(const void *, uint32_t size);
+
+	static VulkanBuffer * CreateStagingBuffer(VulkanDevice*, size_t);
+	static VulkanBuffer * CreateVertexBuffer(VulkanDevice&, size_t);
 
 private:
 	bool TempMemoryBound;
 	VkBuffer m_TheVulkanBuffer;
-	VulkanDevice * mDevice;
+	VulkanDevice & mDevice;
 	allocation mBlock;
 };

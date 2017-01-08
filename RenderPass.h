@@ -1,16 +1,24 @@
 #include "vulkan/vulkan.h"
+#include "Framebuffer.h"
 
-
+class VulkanDevice;
 
 class RenderPass{
-
 public:
-
-	RenderPass(VkDevice);
+	RenderPass(VulkanDevice &, VulkanImage&, VulkanImage&);
+	~RenderPass();
+	VulkanDevice & GetVulkanDevice(){ return mDevice; }
+	FrameBuffer & GetFrameBuffer() { return mFramebuffer; }
+	VkRenderPass GetVkRenderPass(){ return m_TheVulkanRenderPass; }
+	VkRenderPassBeginInfo Begin();
+	void End();
 
 private:
-
 	VkRenderPassCreateInfo CreateInfo;
-	VkDevice mDevice;
-	VkRenderPass  mVulkanRenderPass;
+	VulkanDevice & mDevice;
+	FrameBuffer mFramebuffer;
+	VkRenderPass  m_TheVulkanRenderPass;
+
+	VulkanImage& mDepthImage;
+	VulkanImage& mColorImage;
 };

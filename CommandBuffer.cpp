@@ -2,6 +2,9 @@
 #include "CommandPool.h"
 #include "VulkanDevice.h"
 #include "VulkanImage.h"
+#include "VulkanBuffer.h"
+#include "RenderPass.h"
+#include "VulkanPipeline.h"
 
 #define ENGINE_LOGGING_ENABLED 1
 #include "EngineLogging.h"
@@ -14,7 +17,8 @@
 
 CommandBuffer::CommandBuffer(CommandPool * thePool) :
 mCommandBufferState(CB_INITIAL_STATE),
-mPool(thePool)
+mPool(thePool),
+DrawBuffer(nullptr)
 {
 	Init();
 }
@@ -32,7 +36,7 @@ void CommandBuffer::Init()
 	mAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	mAllocateInfo.commandBufferCount = 1;
 	
-	VkResult result = vkAllocateCommandBuffers(mPool->GetVulkanDevice()->GetVkDevice(), &mAllocateInfo, &m_TheVulkanCommandBuffer);
+	VkResult result = vkAllocateCommandBuffers(mPool->GetVulkanDevice()->getVkDevice(), &mAllocateInfo, &m_TheVulkanCommandBuffer);
 
 	if (result != VK_SUCCESS)
 	{
@@ -54,7 +58,7 @@ void CommandBuffer::InitializeFence()
 	createInfo.pNext = nullptr;
 	createInfo.flags = 0; // VK_FENCE_CREATE_SIGNALED_BIT
 
-	VkResult result = vkCreateFence(mPool->GetVulkanDevice()->GetVkDevice(), &createInfo, nullptr, &mCompletionFence);
+	VkResult result = vkCreateFence(mPool->GetVulkanDevice()->getVkDevice(), &createInfo, nullptr, &mCompletionFence);
 
 	if (result != VK_SUCCESS)
 	{
@@ -68,7 +72,7 @@ void CommandBuffer::InitializeFence()
 
 bool CommandBuffer::IsComplete()
 {
-	VkResult status  =  vkGetFenceStatus(mPool->GetVulkanDevice()->GetVkDevice(), mCompletionFence);
+	VkResult status  =  vkGetFenceStatus(mPool->GetVulkanDevice()->getVkDevice(), mCompletionFence);
 	if (status == VK_SUCCESS)
 	{
 		return true;
@@ -94,9 +98,11 @@ CommandBuffer::~CommandBuffer()
 
 	//vkWaitForFences(mPool->GetVulkanDevice()->GetVkDevice(), 1, &mCompletionFence, VK_TRUE, UINT64_MAX);
 
-	vkDestroyFence(mPool->GetVulkanDevice()->GetVkDevice(), mCompletionFence, nullptr);
+	delete DrawBuffer;
 
-	vkFreeCommandBuffers(mPool->GetVulkanDevice()->GetVkDevice(), mPool->GetVkCommandPool(), 1, &m_TheVulkanCommandBuffer);
+	vkDestroyFence(mPool->GetVulkanDevice()->getVkDevice(), mCompletionFence, nullptr);
+
+	vkFreeCommandBuffers(mPool->GetVulkanDevice()->getVkDevice(), mPool->GetVkCommandPool(), 1, &m_TheVulkanCommandBuffer);
 }
 
 
@@ -140,7 +146,6 @@ void CommandBuffer::CopyImage(VulkanImage& src, VulkanImage& dst)
 		VK_IMAGE_LAYOUT_GENERAL, 
 		1, 
 		&copyRegion);
-
 }
 
 
@@ -155,7 +160,7 @@ void CommandBuffer::BeginCommandBuffer()
 	}
 
 
-	VkResult  result = vkResetFences(mPool->GetVulkanDevice()->GetVkDevice(), 1, &mCompletionFence);
+	VkResult  result = vkResetFences(mPool->GetVulkanDevice()->getVkDevice(), 1, &mCompletionFence);
 
 	if (result != VK_SUCCESS)
 	{
@@ -221,22 +226,88 @@ void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
 	subRange.levelCount = 1;
 	subRange.baseArrayLayer = 0;
 	subRange.layerCount = 1;
-	VkImageMemoryBarrier PresentationMemoryBarrier = {};
 
-	PresentationMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	PresentationMemoryBarrier.pNext = nullptr;
-	PresentationMemoryBarrier.srcAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	PresentationMemoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	PresentationMemoryBarrier.oldLayout = theImage.GetLayout();
-	PresentationMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	PresentationMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	PresentationMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	PresentationMemoryBarrier.image = theImage.GetVkImage();
-	PresentationMemoryBarrier.subresourceRange = subRange;
+	theImage.InsertImageMemoryBarrier(subRange, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+}
 
-	vkCmdPipelineBarrier(m_TheVulkanCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-		0, 0, nullptr, 0, nullptr, 1, &PresentationMemoryBarrier);
 
-	theImage.SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
+
+
+void CommandBuffer::DoDraw(RenderPass&  theRenderPass, VulkanPipeline& thePipeline, VulkanImage& theImage, VkSampler theSampler, VkImageView theView)
+{
+	VkRenderPassBeginInfo beginInfo = theRenderPass.Begin();
+
+	vkCmdBeginRenderPass(GetVkCommandBuffer(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBindPipeline(GetVkCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, thePipeline.getVkPipeline());
+
+	if (DrawBuffer == nullptr)
+	{
+		const float vb[6][5] = {
+			/*      position             texcoord */
+			{ -0.5f, -1.0f, 0.25f, 1.0f, 0.0f },
+			{ 0.5f, -1.0f, 0.25f, 1.0f, 1.0f },
+			{ 0.5f, 1.0f, 1.0f, 0.5f, 1.0f },
+			{ 0.5f, 1.0f, 1.0f, 0.5f, 1.0f },
+			{ -0.5f, 1.0f, 1.0f, 0.5f, 1.0f },
+			{ -0.5f, -1.0f, 0.25f, 0.0f, 0.0f },
+		};
+
+		DrawBuffer = VulkanBuffer::CreateVertexBuffer(theRenderPass.GetVulkanDevice(), sizeof(vb));
+		DrawBuffer->LoadBufferData(vb, sizeof(vb));
+	}
+
+	VkWriteDescriptorSet writeDesc = {};
+	VkDescriptorImageInfo imageInfo = {};
+
+	imageInfo.imageLayout = theImage.GetLayout();
+	imageInfo.imageView = theView;
+	imageInfo.sampler = theSampler;
+
+
+	writeDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDesc.pNext = nullptr;
+	writeDesc.dstSet = thePipeline.getDescSet();
+	writeDesc.dstBinding = 0;
+	writeDesc.dstArrayElement = 0;
+	writeDesc.descriptorCount = 1;
+	writeDesc.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writeDesc.pImageInfo = &imageInfo;
+
+	vkUpdateDescriptorSets(theRenderPass.GetVulkanDevice().getVkDevice(), 1, &writeDesc, 0, nullptr);
+
+	vkCmdBindDescriptorSets(GetVkCommandBuffer(), 
+		VK_PIPELINE_BIND_POINT_GRAPHICS, 
+		thePipeline.getLayout(), 
+		0, 
+		1, 
+		thePipeline.getDescSetAddr(), 
+		0, 
+		nullptr);
+	//vkCmdSetViewVport()
+	//vkCmdSetScissor();
+
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(GetVkCommandBuffer(), 0, 1, DrawBuffer->GetVkBufferAddr(), &offset);
+	/*
+	VkViewport viewport;
+	memset(&viewport, 0, sizeof(viewport));
+	viewport.height = (float)400;
+	viewport.width = (float)400;
+	viewport.minDepth = (float)0.0f;
+	viewport.maxDepth = (float)1.0f;
+	vkCmdSetViewport(GetVkCommandBuffer(), 0, 1, &viewport);
+
+	VkRect2D scissor;
+	memset(&scissor, 0, sizeof(scissor));
+	scissor.extent.width = 400;
+	scissor.extent.height = 400;
+	scissor.offset.x = 0;
+	scissor.offset.y = 0;
+	vkCmdSetScissor(GetVkCommandBuffer(), 0, 1, &scissor);
+	*/
+	vkCmdDraw(GetVkCommandBuffer(), 6, 1, 0, 0);	
+	vkCmdEndRenderPass(GetVkCommandBuffer());
+
+	theRenderPass.End();
 }

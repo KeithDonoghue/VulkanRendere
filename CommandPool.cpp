@@ -18,7 +18,7 @@ mDevice(theVulkanDevice)
 	mCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	mCreateInfo.queueFamilyIndex = 0;
 
-	VkResult result = vkCreateCommandPool(mDevice->GetVkDevice(), &mCreateInfo, nullptr, &m_TheVulkanCommandPool);
+	VkResult result = vkCreateCommandPool(mDevice->getVkDevice(), &mCreateInfo, nullptr, &m_TheVulkanCommandPool);
 	if (result != VK_SUCCESS)
 	{
 		EngineLog("Failed to create command pool")
@@ -47,7 +47,7 @@ CommandPool::~CommandPool()
 
 	delete mCurrentCommandBuffer;
 
-	vkDestroyCommandPool(mDevice->GetVkDevice(), m_TheVulkanCommandPool, nullptr);
+	vkDestroyCommandPool(mDevice->getVkDevice(), m_TheVulkanCommandPool, nullptr);
 }
 
 

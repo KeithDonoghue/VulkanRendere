@@ -47,7 +47,7 @@ MyEngine::~MyEngine()
 
 	delete m_TheSwapchain;
 	delete m_TheWindow;
-	delete m_TheVulkanDevice;
+	delete mVulkanDevice;
 
 
 	DestroyDebugReportStuff();
@@ -304,9 +304,10 @@ void MyEngine::CreateVulkanInstance()
 	for (int i = 0; i < m_AvailableExtensionNames.size(); i++)
 	UsingExtensions.push_back(m_AvailableExtensionNames[i].c_str());
 	*/
-	UsingLayers.push_back("VK_LAYER_LUNARG_api_dump");
+	
+	//UsingLayers.push_back("VK_LAYER_LUNARG_api_dump");
 
-	UsingLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+	//UsingLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 
 
 	UsingExtensions.push_back("VK_KHR_win32_surface");
@@ -375,7 +376,7 @@ void MyEngine::DoPhysicalDeviceStuff()
 
 void MyEngine::CreateDevice()
 {
-	m_TheVulkanDevice = new VulkanDevice(m_AvailablePhysicalDevices[0]);
+	mVulkanDevice = new VulkanDevice(m_AvailablePhysicalDevices[0]);
 
 }
 
@@ -533,7 +534,7 @@ void MyEngine::DumpSurfaceInfoToFile()
 void MyEngine::CreateSwapchain()
 {
 
-	m_TheSwapchain = new Swapchain(m_TheVulkanDevice, m_TheWindow);
+	m_TheSwapchain = new Swapchain(mVulkanDevice, m_TheWindow);
 	m_TheWindow->SetUpSwapChain(m_TheSwapchain);
 }
 
@@ -627,8 +628,9 @@ void MyEngine::SpawnUpdateThread()
 
 void MyEngine::Update()
 {
+	mVulkanDevice->CreateInitialData();
 	while(!mFinish)
 	{
-		m_TheVulkanDevice->Update();
+		mVulkanDevice->Update();
 	}
 }

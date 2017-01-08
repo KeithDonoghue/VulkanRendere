@@ -31,8 +31,12 @@
 			    }
 
 class CommandPool;
+class DescriptorPool;
 class VulkanImage;
 class VulkanMemMngr;
+class RenderPass;
+class ShaderModule;
+class VulkanPipeline;
 
 
 typedef struct SyncedPresentable{
@@ -47,6 +51,11 @@ class VulkanDevice
 public:
 	VulkanDevice(VkPhysicalDevice);
 	~VulkanDevice();
+
+	VkDevice getVkDevice()
+	{
+		return TheVulkanDevice;
+	}
 
 	VkDevice GetVkDevice()
 	{
@@ -64,6 +73,7 @@ public:
 	}
 
 	CommandPool * GetCommandPool() { return mCommandPool; }
+	DescriptorPool& GetDescriptorPool() { return *mDescriptorPool; }
 
 	void GetDeviceExtensionPointers();
 	void CreateCommandPool();
@@ -75,7 +85,10 @@ public:
 	bool GetFromAvailableQueue(SyncedPresentable&);
 	void				AddToPresentQueue(SyncedPresentable);
 	bool GetFromPresentQueue(SyncedPresentable&);
+	void CreateInitialData();
 	void Update();
+
+	void CreateDescriptorPool();
 
 
 	void LockQueue()	{ mQueueLock.lock() ; }
@@ -94,12 +107,21 @@ private:
 	VkDeviceQueueCreateInfo mQueueCreateInfo;
 	VkDeviceCreateInfo mCreateInfo;
 
-
-	bool ImageCreated;
 	VulkanImage * mImage;
 
+	std::vector<VulkanImage*> mDepthImages;
+	std::vector<RenderPass*> mRenderPasses;
+
+	DescriptorPool * mDescriptorPool;
 	CommandPool *	mCommandPool;
 	VulkanMemMngr * mMemoryManager;
+
+
+	ShaderModule * mVert;
+	ShaderModule * mFrag;
+	VulkanPipeline * mPipeline;
+
+
 
 	std::vector<VulkanImage> mPresentableImageArray;
 	std::deque<SyncedPresentable>		mAvailableImageIndicesArray;
@@ -115,5 +137,12 @@ private:
 	PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR;
 	PFN_vkAcquireNextImageKHR fpAcquireNextImageKHR;
 	PFN_vkQueuePresentKHR fpQueuePresentKHR;
+
+
+
+	VkSampler theSampler;
+	VkImageView theView;
+	bool inited = false;
+
 };
 #endif

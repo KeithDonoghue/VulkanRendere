@@ -65,16 +65,18 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>..\..\1.0.30.0\Source\lib32\vulkan-1.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d:\VulkanSDK\1.0.30.0\Source\lib32\vulkan-1.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ApiUsageHeader.h" />
     <ClInclude Include="CommandBuffer.h" />
     <ClInclude Include="CommandPool.h" />
+    <ClInclude Include="DescriptorPool.h" />
     <ClInclude Include="EngineLogging.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="ImageLoader.h" />
+    <ClInclude Include="ShaderModule.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="VulkanBuffer.h" />
     <ClInclude Include="VulkanDevice.h" />
@@ -84,22 +86,25 @@
     <ClInclude Include="VulkanEvent.h" />
     <ClInclude Include="VulkanImage.h" />
     <ClInclude Include="VulkanMemoryManager.h" />
+    <ClInclude Include="VulkanPipeline.h" />
     <ClInclude Include="WindowsWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommandBuffer.cpp" />
     <ClCompile Include="CommandPool.cpp" />
+    <ClCompile Include="DescriptorPool.cpp" />
     <ClCompile Include="EngineLogging.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
+    <ClCompile Include="ShaderModule.cpp" />
     <ClCompile Include="VulkanBuffer.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MyEngine.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="Swapchain.cpp" />
-    <ClCompile Include="VulkanEvent.cpp" />
     <ClCompile Include="VulkanImage.cpp" />
     <ClCompile Include="VulkanMemoryManager.cpp" />
+    <ClCompile Include="VulkanPipeline.cpp" />
     <ClCompile Include="WindowsWindow.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
