@@ -7,12 +7,12 @@ mDevice(theDevice)
 	VkDescriptorPoolCreateInfo poolCreateInfo = {};
 	VkDescriptorPoolSize descType = {};
 	descType.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descType.descriptorCount = 1;
+	descType.descriptorCount = 2;
 
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolCreateInfo.pNext = nullptr;
 	poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-	poolCreateInfo.maxSets = 1;
+	poolCreateInfo.maxSets = 2;
 	poolCreateInfo.poolSizeCount = 1;
 	poolCreateInfo.pPoolSizes = &descType;
 

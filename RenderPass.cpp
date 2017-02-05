@@ -9,7 +9,7 @@ RenderPass::RenderPass(VulkanDevice & theDevice, VulkanImage& depthImage, Vulkan
 mDevice(theDevice),
 mDepthImage(depthImage),
 mColorImage(colorImage),
-mFramebuffer(*this, 400, 400 , 1)
+mFramebuffer(*this, colorImage.getWidth(), colorImage.getHeight() , 1)
 {
 
 	VkAttachmentDescription attachments[2] = {};
@@ -126,7 +126,7 @@ VkRenderPassBeginInfo RenderPass::Begin()
 	clearValues.push_back(clearingValue);
 
 	VkRect2D renderArea = {};
-	renderArea.extent = { 400, 400 };
+	renderArea.extent = { mFramebuffer.getWidth(), mFramebuffer.getHeight() };
 	renderArea.offset = { 0, 0, };
 
 	VkRenderPassBeginInfo BeginInfo = {};

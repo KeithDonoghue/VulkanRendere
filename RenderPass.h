@@ -1,3 +1,6 @@
+#ifndef RENDER_PASS_HDR
+#define RENDER_PASS_HDR
+
 #include "vulkan/vulkan.h"
 #include "Framebuffer.h"
 
@@ -22,3 +25,5 @@ private:
 	VulkanImage& mDepthImage;
 	VulkanImage& mColorImage;
 };
+
+#endif // RENDER_PASS_HDR

@@ -14,6 +14,10 @@ public:
 	VkPipelineLayout getLayout() { return mPipelineLayout; }
 	VkDescriptorSet getDescSet() { return mDescSet; }
 	VkDescriptorSet * getDescSetAddr() { return &mDescSet; }
+	VkPipelineViewportStateCreateInfo * CreateViewportState(VkPipelineViewportStateCreateInfo*);
+	VkPipelineDepthStencilStateCreateInfo * CreateDepthStencilState(VkPipelineDepthStencilStateCreateInfo*);
+	VkPipelineRasterizationStateCreateInfo * CreateRasterisationState(VkPipelineRasterizationStateCreateInfo*);
+
 	void CreatePipelineLayout(RenderPass&, ShaderModule&, ShaderModule&);
 
 private:

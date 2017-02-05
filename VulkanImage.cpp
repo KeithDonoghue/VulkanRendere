@@ -15,11 +15,17 @@
 
 #include <algorithm>
 
-VulkanImage::VulkanImage(VulkanDevice * theDevice, VkImage theImage, bool systemManaged) :
+
+
+
+
+VulkanImage::VulkanImage(VulkanDevice * theDevice, VkImage theImage, uint32_t width, uint32_t height, bool systemManaged) :
 mDevice(theDevice),
 m_TheVulkanImage(theImage),
 mSystemManaged(systemManaged),
-mType(VULKAN_IMAGE_COLOR_RGBA8)
+mType(VULKAN_IMAGE_COLOR_RGBA8),
+mWidth(width),
+mHeight(height)
 {}
 
 
@@ -29,10 +35,47 @@ mType(VULKAN_IMAGE_COLOR_RGBA8)
 VulkanImage::VulkanImage(VulkanDevice * theDevice, int width, int height, ImageType type):
 mCreateInfo{},
 mExtent{},
+mWidth(width),
+mHeight(height),
 mDevice(theDevice),
 mType(type)
 {
-	mExtent = { width, height, 1 };
+	Init();
+}
+
+
+
+
+
+VulkanImage::VulkanImage(VulkanDevice * theDevice, std::string filename):
+mDevice(theDevice),
+mType(ImageType::VULKAN_IMAGE_COLOR_RGBA8)
+{
+	int x, y, n;
+	unsigned char * data = stbi_load(filename.c_str(), &x, &y, &n, 4);
+
+	mWidth = x;
+	mHeight = y;
+
+	Init();
+
+	ClearImage(1.0f);
+
+	mStagingBuffer = VulkanBuffer::CreateStagingBuffer(*mDevice, x*y * 4);
+	mStagingBuffer->LoadBufferData(data, x*y * 4);
+
+	stbi_image_free(data);
+
+	LoadDataToImage();
+}
+
+
+
+
+
+void VulkanImage::Init()
+{
+	mExtent = { mWidth, mHeight, 1 };
 	mCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	mCreateInfo.pNext = nullptr;
 	mCreateInfo.flags = 0;
@@ -43,7 +86,7 @@ mType(type)
 	mCreateInfo.arrayLayers = 1;
 	mCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	mCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	mCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | GetUsageForType(type);
+	mCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | GetUsageForType(mType);
 	mCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	mCreateInfo.queueFamilyIndexCount = 0;
 	mCreateInfo.pQueueFamilyIndices = nullptr;
@@ -62,7 +105,7 @@ mType(type)
 	VkMemoryRequirements memoryRequirements = {};
 	vkGetImageMemoryRequirements(mDevice->getVkDevice(), m_TheVulkanImage, &memoryRequirements);
 
-	mAllocStruct = mDevice->GetMemManager()->GetAllocation(memoryRequirements);
+	mAllocStruct = mDevice->GetMemManager().GetAllocation(memoryRequirements);
 
 	result = vkBindImageMemory(mDevice->getVkDevice(), m_TheVulkanImage, mAllocStruct.mPointer, mAllocStruct.mOffset);
 
@@ -81,8 +124,7 @@ VulkanImage::~VulkanImage()
 	if (!mSystemManaged)
 	{
 		vkQueueWaitIdle(mDevice->GetVkQueue());
-		delete mStagingBuffer;
-		mDevice->GetMemManager()->FreeAllocation(mAllocStruct);
+		mDevice->GetMemManager().FreeAllocation(mAllocStruct);
 		vkDestroyImage(mDevice->getVkDevice(), m_TheVulkanImage, nullptr);
 	}
 }
@@ -135,7 +177,7 @@ void VulkanImage::ClearColourImage(VkImageSubresourceRange& subRange, float valu
 	clearColour.float32[2] = value;
 	clearColour.float32[3] = 0.0f;
 
-	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool()->GetCurrentCommandBuffer();
+	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool().GetCurrentCommandBuffer();
 
 	vkCmdClearColorImage(currentCommandBuffer->GetVkCommandBuffer(), GetVkImage(), GetLayout(), &clearColour, 1, &subRange);
 
@@ -155,7 +197,7 @@ void VulkanImage::ClearDepthImage(VkImageSubresourceRange& subRange, float value
 	VkClearDepthStencilValue clearValue = {};
 	clearValue.depth = value;
 	
-	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool()->GetCurrentCommandBuffer();
+	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool().GetCurrentCommandBuffer();
 
 	vkCmdClearDepthStencilImage(currentCommandBuffer->GetVkCommandBuffer(), GetVkImage(), GetLayout(), &clearValue, 1, &subRange);
 }
@@ -169,7 +211,7 @@ void VulkanImage::InsertImageMemoryBarrier(VkImageSubresourceRange& subRange, Vk
 	if (newLayout == GetLayout())
 		return;
 
-	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool()->GetCurrentCommandBuffer();
+	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool().GetCurrentCommandBuffer();
 	currentCommandBuffer->BeginCommandBuffer();
 
 
@@ -204,7 +246,7 @@ void VulkanImage::InsertImageMemoryBarrier(VkImageSubresourceRange& subRange, Vk
 void VulkanImage::CopyImageData(VulkanImage& src)
 {
 
-	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool()->GetCurrentCommandBuffer();
+	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool().GetCurrentCommandBuffer();
 
 	currentCommandBuffer->BeginCommandBuffer();
 
@@ -243,7 +285,8 @@ void VulkanImage::CopyImageData(VulkanImage& src)
 	copyRegion.srcOffset = { 0, 0, 0 };
 	copyRegion.dstSubresource = dstSubresource;
 	copyRegion.dstOffset = { 0, 0, 0 };
-	copyRegion.extent = { 400, 400, 1 };
+
+	copyRegion.extent = { std::min(mWidth, src.mWidth), std::min(mHeight, src.mHeight), 1 };
 
 	vkCmdCopyImage(currentCommandBuffer->GetVkCommandBuffer(),
 		src.GetVkImage(),
@@ -261,27 +304,6 @@ void VulkanImage::CopyImageData(VulkanImage& src)
 void VulkanImage::LoadDataToImage()
 {
 
-
-	int x, y, n;
-	unsigned char * data = stbi_load("Resources/jpeg_bad.jpg", &x, &y, &n, 4);
-
-	unsigned char * pointer = (unsigned char*)malloc(x * y * 4);
-	memset(pointer, 0, x * y * 4);
-	
-	for (int i = 0; i < x * y * 4; i = i + 4)
-	{
-		memset(pointer + i, 255, 1);
-	}
-
-	mStagingBuffer = VulkanBuffer::CreateStagingBuffer(mDevice, x*y*4);
-
-	mStagingBuffer->LoadBufferData(data, x*y*4);
-
-
-	stbi_image_free(data);
-
-
-
 	VkImageSubresourceLayers subLayers = {};
 	subLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	subLayers.baseArrayLayer = 0;
@@ -294,7 +316,7 @@ void VulkanImage::LoadDataToImage()
 	copyInfo.bufferImageHeight = 0;
 	copyInfo.imageSubresource = subLayers;
 	copyInfo.imageOffset = { 0, 0, 0 };
-	copyInfo.imageExtent = { 400, 400, 1};
+	copyInfo.imageExtent = { mWidth, mHeight, 1};
 	
 
 	VkImageSubresourceRange barrierSubRange = {};
@@ -306,14 +328,59 @@ void VulkanImage::LoadDataToImage()
 	barrierSubRange.levelCount = 1;
 
 
-	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool()->GetCurrentCommandBuffer();
+	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool().GetCurrentCommandBuffer();
 	currentCommandBuffer->BeginCommandBuffer();
 
 	InsertImageMemoryBarrier(barrierSubRange, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	vkCmdCopyBufferToImage(currentCommandBuffer->GetVkCommandBuffer(), mStagingBuffer->GetVkBuffer(), GetVkImage(), GetLayout(), 1, &copyInfo);
+	vkCmdCopyBufferToImage(currentCommandBuffer->GetVkCommandBuffer(), 
+		mStagingBuffer->GetVkBuffer(), 
+		GetVkImage(), 
+		GetLayout(), 
+		1, 
+		&copyInfo);
 }
 
+
+
+
+
+void VulkanImage::BlitFullImage(VulkanImage& src)
+{
+	CommandBuffer * currentCommandBuffer = mDevice->GetCommandPool().GetCurrentCommandBuffer();
+	currentCommandBuffer->BeginCommandBuffer();
+
+	VkImageBlit blitRegions = {};
+	VkImageSubresourceLayers subresources = {};
+	subresources.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresources.baseArrayLayer = 0;
+	subresources.layerCount = 1;
+	subresources.mipLevel = 0;
+
+
+
+	blitRegions.srcSubresource = subresources;
+	blitRegions.srcOffsets[0] = { 0, 0, 0 };
+	blitRegions.srcOffsets[1] = { src.getWidth(), src.getHeight(), 1 };
+
+	blitRegions.dstSubresource = subresources;
+	blitRegions.dstOffsets[0] = { 0, 0, 0 };
+	blitRegions.dstOffsets[1] = { getWidth(), getHeight(), 1 };
+
+	src.BlittingFrom();
+	TransToRecieveBlit();
+	static int doBlit = 0;
+
+
+	vkCmdBlitImage(currentCommandBuffer->GetVkCommandBuffer(), 
+		src.getVkImage(), 
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+		getVkImage(),
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1,
+		&blitRegions,
+		VK_FILTER_LINEAR);
+}
 
 
 
@@ -322,7 +389,7 @@ VkFormat VulkanImage::GetFormatForType(ImageType type)
 {
 	static VkFormat FormatMap[ImageType::VULKAN_IMAGE_RANGE_SIZE] =
 	{
-		VK_FORMAT_B8G8R8A8_UNORM,
+		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_FORMAT_D16_UNORM
 	};
 
@@ -369,6 +436,51 @@ void VulkanImage::TransitionToClearable(VkImageSubresourceRange& subRange)
 	InsertImageMemoryBarrier(subRange, VK_IMAGE_LAYOUT_GENERAL);
 }
 
+
+
+
+VkImageAspectFlags VulkanImage::getAspectFlags()
+{
+	static VkImageAspectFlags accessMap[ImageType::VULKAN_IMAGE_RANGE_SIZE] =
+	{
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		VK_IMAGE_ASPECT_DEPTH_BIT
+	};
+
+	return accessMap[getType()];
+}
+
+
+
+
+
+void VulkanImage::TransToRecieveBlit()
+{
+	VkImageSubresourceRange subRange = {};
+	subRange.aspectMask = getAspectFlags();
+	subRange.baseArrayLayer = 0;
+	subRange.baseMipLevel = 0;
+	subRange.layerCount = 1;
+	subRange.levelCount = 1;
+
+	InsertImageMemoryBarrier(subRange, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+}
+
+
+
+
+
+void VulkanImage::BlittingFrom()
+{
+	VkImageSubresourceRange subRange = {};
+	subRange.aspectMask = getAspectFlags();
+	subRange.baseArrayLayer = 0;
+	subRange.baseMipLevel = 0;
+	subRange.layerCount = 1;
+	subRange.levelCount = 1;
+
+	InsertImageMemoryBarrier(subRange, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+}
 
 
 

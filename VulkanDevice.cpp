@@ -1,5 +1,6 @@
 #include "VulkanDevice.h"
 #include "VulkanImage.h"
+#include "VulkanBuffer.h"
 #include "VulkanMemoryManager.h"
 
 #include "DescriptorPool.h"
@@ -8,6 +9,7 @@
 #include "RenderPass.h"
 #include "ShaderModule.h"
 #include "VulkanPipeline.h"
+#include "RenderInstance.h"
 
 
 
@@ -83,9 +85,8 @@ VulkanDevice::~VulkanDevice()
 {
 	vkDeviceWaitIdle(TheVulkanDevice);
 
-	vkDestroySampler(getVkDevice(), theSampler, nullptr);
-	vkDestroyImageView(getVkDevice(), theView, nullptr);
-
+	delete mRenderInstance;
+	delete mRenderInstance2;
 
 	for (size_t i = 0; i < mDepthImages.size(); i++)
 	{
@@ -95,14 +96,17 @@ VulkanDevice::~VulkanDevice()
 
 	delete mVert;
 	delete mFrag;
+	delete mFrag2;
 	delete mPipeline;
+	delete mPipeline2;
 
 
 	delete mImage;
-	delete mCommandPool;
-	delete mMemoryManager;
-	delete mDescriptorPool;
-
+	
+	mCommandPool.reset();
+	mMemoryManager.reset();
+	mDescriptorPool.reset();
+	
 	std::lock_guard<std::mutex> lock1(mAvailableImageIndicesArrayLock);
 	std::lock_guard<std::mutex> lock2(mPresentableImageIndicesArrayLock);
 
@@ -142,20 +146,11 @@ void VulkanDevice::GetDeviceExtensionPointers()
 
 
 
-void VulkanDevice::CreateCommandPool()
-{
-	mCommandPool = new CommandPool(this);
-}
-
-
-
-
-
-void VulkanDevice::PopulatePresentableImages(VkImage * ImageArray, uint32_t size)
+void VulkanDevice::PopulatePresentableImages(VkImage * ImageArray, uint32_t size, uint32_t width, uint32_t height)
 {
 	for (uint32_t i = 0; i < size; i++)
 	{
-		mPresentableImageArray.emplace_back(VulkanImage(this, ImageArray[i], true));
+		mPresentableImageArray.emplace_back(VulkanImage(this, ImageArray[i], width, height, true));
 	}
 }
 
@@ -163,103 +158,9 @@ void VulkanDevice::PopulatePresentableImages(VkImage * ImageArray, uint32_t size
 
 
 
-
-void VulkanDevice::Update()
+void VulkanDevice::CreateCommandPool()
 {
-
-	CommandBuffer * currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
-	SyncedPresentable nextPresentable;
-	bool isPresentableReady = GetFromAvailableQueue(nextPresentable);
-
-	if (!isPresentableReady)
-		return;
-
-	uint32_t nextImage = nextPresentable.mEngineImageIndex;
-
-	if (!inited)
-	{
-		inited = true;
-		VkSamplerCreateInfo  samplerCreateInfo = {};
-
-		samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerCreateInfo.pNext = NULL;
-		samplerCreateInfo.magFilter = VK_FILTER_NEAREST;
-		samplerCreateInfo.minFilter = VK_FILTER_NEAREST;
-		samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-		samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerCreateInfo.mipLodBias = 0.0f;
-		samplerCreateInfo.anisotropyEnable = VK_FALSE;
-		samplerCreateInfo.maxAnisotropy = 1;
-		samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
-		samplerCreateInfo.minLod = 0.0f;
-		samplerCreateInfo.maxLod = 0.0f;
-		samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-		samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
-
-		VkResult result = vkCreateSampler(getVkDevice(), &samplerCreateInfo, nullptr, &theSampler);
-		if (result != VK_SUCCESS)
-		{
-			EngineLog("Failed to create Sampler");
-		}
-		VkImageViewCreateInfo view = {};
-		view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		view.pNext = NULL;
-		view.image = mImage->getVkImage();
-		view.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		view.format = mImage->GetFormat();
-		view.components =
-		{
-			VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G,
-			VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A,
-		};
-		view.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-		view.flags = 0;
-
-		result = vkCreateImageView(getVkDevice(), &view, nullptr, &theView);
-		if (result != VK_SUCCESS)
-		{
-			EngineLog("Failed to create Sampler");
-		}
-
-	}
-
-	mPresentableImageArray[nextImage].ClearImage(1.0f);
-	mPresentableImageArray[nextImage].CopyImageData(*mImage);
-
-	currentCommandBuffer->DoDraw(*mRenderPasses[nextImage], *mPipeline, *mImage, theSampler, theView);
-	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
-
-		
-	VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-
-	VkSubmitInfo theSubmitInfo;
-	memset(&theSubmitInfo, 0, sizeof(VkSubmitInfo));
-	theSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	theSubmitInfo.pNext = nullptr;
-	theSubmitInfo.waitSemaphoreCount = 1;
-	theSubmitInfo.pWaitSemaphores = &nextPresentable.mWaitForAcquireSemaphore;
-	theSubmitInfo.pWaitDstStageMask = &stageFlags;
-	theSubmitInfo.commandBufferCount = 1;
-	theSubmitInfo.pCommandBuffers = currentCommandBuffer->GetVkCommandBufferAddr();
-	theSubmitInfo.signalSemaphoreCount = 1;
-	theSubmitInfo.pSignalSemaphores = &nextPresentable.mWaitForPresentSemaphore;
-
-	currentCommandBuffer->EndCommandBuffer();
-	
-	LockQueue();
-	VkResult  result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, currentCommandBuffer->GetCompletionFence());
-	UnlockQueue();
-
-	mCommandPool->NextCmdBuffer();
-
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Queue submission failed.");
-	}
-
-	AddToPresentQueue(nextPresentable);
+	mCommandPool = std::make_unique<CommandPool>(this);
 }
 
 
@@ -268,7 +169,16 @@ void VulkanDevice::Update()
 
 void VulkanDevice::CreateMemoryManager()
 {
-	mMemoryManager = new VulkanMemMngr(this);
+	mMemoryManager = std::make_unique<VulkanMemMngr>(this);
+}
+
+
+
+
+
+void VulkanDevice::CreateDescriptorPool()
+{
+	mDescriptorPool = std::make_unique<DescriptorPool>(*this);
 }
 
 
@@ -338,30 +248,136 @@ bool VulkanDevice::GetFromPresentQueue(SyncedPresentable& nextPresentable)
 
 
 
-void  VulkanDevice::CreateInitialData()
-{	
-	mImage = new VulkanImage(this, 400, 400, ImageType::VULKAN_IMAGE_COLOR_RGBA8);
-
-	mImage->ClearImage(1.0f);
-	mImage->LoadDataToImage();
-
-
-	
+void  VulkanDevice::CreateRenderTargets(int width, int height)
+{
 	for (size_t i = 0; i < mPresentableImageArray.size(); i++)
 	{
-		mDepthImages.emplace_back(new VulkanImage(this, 400, 400, ImageType::VULKAN_IMAGE_DEPTH));
-		mRenderPasses.emplace_back(new RenderPass(*this, *mDepthImages[i], mPresentableImageArray[i]));		
+		mDepthImages.emplace_back(new VulkanImage(this, width, height, ImageType::VULKAN_IMAGE_DEPTH));
+		mRenderPasses.emplace_back(new RenderPass(*this, *mDepthImages[i], mPresentableImageArray[i]));
 	}
-
-	mVert = ShaderModule::CreateVertexShader(*this);
-	mFrag = ShaderModule::CreateFragmentShader(*this);
-	mPipeline = new VulkanPipeline(*this, *mRenderPasses[0], *mVert, *mFrag);
 }
 
 
 
 
-void VulkanDevice::CreateDescriptorPool()
+
+
+void  VulkanDevice::CreateInitialData()
 {
-	mDescriptorPool = new DescriptorPool(*this);
+	mImage = new VulkanImage(this, "Resources/jpeg_bad.jpg");
+
+
+
+	mVert = ShaderModule::CreateVertexShader(*this);
+	mFrag = ShaderModule::CreateFragmentShader(*this);
+	mFrag2 = ShaderModule::CreateFragmentShader2(*this);
+	mPipeline = new VulkanPipeline(*this, *mRenderPasses[0], *mVert, *mFrag);
+	mPipeline2 = new VulkanPipeline(*this, *mRenderPasses[0], *mVert, *mFrag2);
+	mRenderInstance = new RenderInstance(*this, *mPipeline, *mImage);
+	mRenderInstance2 = new RenderInstance(*this, *mPipeline2, *mImage);
+
+	std::shared_ptr<VulkanBuffer> drawbuffer = VulkanBuffer::SetUpVertexBuffer(*this);
+	std::shared_ptr<VulkanBuffer> indexDrawbuffer = VulkanBuffer::SetUpVertexIndexBuffer(*this);
+	std::shared_ptr<VulkanBuffer> indexbuffer = VulkanBuffer::SetUpIndexBuffer(*this);
+
+	VertexDraw	theDraw(6, 1, 0, 0, drawbuffer);
+	IndexDraw	theIndexDraw(36, 1, 0, 0, 0, indexDrawbuffer, indexbuffer);
+
+	mRenderInstance->SetDraw(theDraw);
+	mRenderInstance2->SetDraw(theDraw);
+
+	mRenderInstance->SetDraw(theIndexDraw);
+	mRenderInstance2->SetDraw(theIndexDraw);
+}
+
+
+
+
+
+void VulkanDevice::Update()
+{
+
+	CommandBuffer * currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
+	SyncedPresentable nextPresentable;
+	bool isPresentableReady = GetFromAvailableQueue(nextPresentable);
+
+	if (!isPresentableReady)
+		return;
+
+	uint32_t nextImage = nextPresentable.mEngineImageIndex;
+
+
+	mPresentableImageArray[nextImage].ClearImage(1.0f);
+	mPresentableImageArray[nextImage].BlitFullImage(*mImage);
+	
+	DoRender(nextImage);
+
+	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
+
+
+	VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+	VkSubmitInfo theSubmitInfo;
+	memset(&theSubmitInfo, 0, sizeof(VkSubmitInfo));
+	theSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	theSubmitInfo.pNext = nullptr;
+	theSubmitInfo.waitSemaphoreCount = 1;
+	theSubmitInfo.pWaitSemaphores = &nextPresentable.mWaitForAcquireSemaphore;
+	theSubmitInfo.pWaitDstStageMask = &stageFlags;
+	theSubmitInfo.commandBufferCount = 1;
+	theSubmitInfo.pCommandBuffers = currentCommandBuffer->GetVkCommandBufferAddr();
+	theSubmitInfo.signalSemaphoreCount = 1;
+	theSubmitInfo.pSignalSemaphores = &nextPresentable.mWaitForPresentSemaphore;
+
+	currentCommandBuffer->EndCommandBuffer();
+
+	LockQueue();
+	VkResult  result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, currentCommandBuffer->GetCompletionFence());
+	UnlockQueue();
+
+	mCommandPool->NextCmdBuffer();
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Queue submission failed.");
+	}
+
+	AddToPresentQueue(nextPresentable);
+}
+
+
+
+
+
+void VulkanDevice::TakeInput(unsigned int keyPress)
+{
+	if (keyPress == 65)
+		mRenderInstance->ChangeWorldPosition(1.0f, 0.0f, 0.0f);
+
+	if (keyPress == 66)
+		mRenderInstance->ChangeWorldPosition(-1.0f, 0.0f, 0.0f);
+
+	if (keyPress == 67)
+		mRenderInstance->ChangeWorldPosition(0.0f, 0.0f, 1.0f);
+
+	if (keyPress == 68)
+		mRenderInstance->ChangeWorldPosition(0.0f, 0.0f, -1.0f);
+
+	if (keyPress == 37)
+		mRenderInstance->ChangeWorldPosition(0.0f, -1.0f, 0.0f);
+
+	if (keyPress == 39)
+		mRenderInstance->ChangeWorldPosition(0.0f, 1.0f, 0.0f);
+}
+
+
+
+
+
+void VulkanDevice::DoRender(uint32_t nextImage)
+{
+
+		mRenderInstance->Draw(*mRenderPasses[nextImage]);
+
+		//mRenderInstance2->Draw(*mRenderPasses[nextImage]);
 }

@@ -1,4 +1,12 @@
+#ifndef COMMAND_BUFFER_HDR
+#define COMMAND_BUFFER_HDR 1 
+
 #include "vulkan/vulkan.h"
+#include "RenderInstance.h"
+
+#include <glm/mat4x4.hpp> // glm::mat4
+
+
 
 class CommandPool;
 class VulkanImage;
@@ -17,7 +25,7 @@ typedef enum CommandBufferState{
 class CommandBuffer
 {
 public:
-	CommandBuffer(CommandPool *);
+	CommandBuffer(CommandPool&);
 	void Init();
 	void InitializeFence();
 	~CommandBuffer();
@@ -25,27 +33,29 @@ public:
 	VkCommandBuffer * GetVkCommandBufferAddr() { return &m_TheVulkanCommandBuffer; }
 
 	VkFence GetCompletionFence() { return mCompletionFence; }
-	CommandPool * GetPool() { return mPool; }
+	CommandPool& GetPool() { return mPool; }
 	
 	
 	void GetImageReadyForPresenting(VulkanImage&);
-	void CopyImage(VulkanImage&, VulkanImage&);
 	bool IsComplete();
 	void BeginCommandBuffer();
 	void EndCommandBuffer();
 
-	void DoDraw(RenderPass&, VulkanPipeline&, VulkanImage&, VkSampler, VkImageView);
-
+	void SetUpMVP(VulkanPipeline&, glm::mat4&);
+	void StartDraw(RenderPass&, VulkanPipeline&, VulkanImage&, VkSampler, VkImageView);
+	void Draw(VertexDraw);
+	void Draw(IndexDraw);
+	void EndDraw(RenderPass&, uint32_t);
 
 private:
 	VkCommandBufferAllocateInfo mAllocateInfo;
 	VkCommandBuffer m_TheVulkanCommandBuffer;
 	CommandBufferState mCommandBufferState;
-	CommandPool * mPool;
+	CommandPool& mPool;
 	VkFence mCompletionFence;
 
 	bool RenderPassCreated;
-	RenderPass * theRenderPass;
-
 	VulkanBuffer * DrawBuffer;
 };
+
+#endif // COMMAND_BUFFER_HDR

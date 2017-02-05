@@ -3,9 +3,11 @@
 
 #include "Vulkan/Vulkan.h"
 
+
 #include <vector>
 #include <deque>
 #include <mutex>
+#include <memory>
 
 
 #ifdef _WIN32
@@ -37,6 +39,7 @@ class VulkanMemMngr;
 class RenderPass;
 class ShaderModule;
 class VulkanPipeline;
+class RenderInstance;
 
 
 typedef struct SyncedPresentable{
@@ -72,21 +75,26 @@ public:
 		return mQueue;
 	}
 
-	CommandPool * GetCommandPool() { return mCommandPool; }
+	CommandPool& GetCommandPool() { return *mCommandPool; }
 	DescriptorPool& GetDescriptorPool() { return *mDescriptorPool; }
 
 	void GetDeviceExtensionPointers();
 	void CreateCommandPool();
 	void CreateMemoryManager();
-	void PopulatePresentableImages(VkImage *, uint32_t);
+	void PopulatePresentableImages(VkImage *, uint32_t, uint32_t, uint32_t);
 	void AddToAvailableQueue(SyncedPresentable);
-	VulkanMemMngr * GetMemManager() { return mMemoryManager;  };
+	VulkanMemMngr& GetMemManager() { return *mMemoryManager;  };
 
 	bool GetFromAvailableQueue(SyncedPresentable&);
-	void				AddToPresentQueue(SyncedPresentable);
+	void AddToPresentQueue(SyncedPresentable);
 	bool GetFromPresentQueue(SyncedPresentable&);
 	void CreateInitialData();
+	void CreateRenderTargets(int, int);
+
 	void Update();
+	void DoRender(uint32_t);
+	void TakeInput(unsigned int);
+
 
 	void CreateDescriptorPool();
 
@@ -112,18 +120,19 @@ private:
 	std::vector<VulkanImage*> mDepthImages;
 	std::vector<RenderPass*> mRenderPasses;
 
-	DescriptorPool * mDescriptorPool;
-	CommandPool *	mCommandPool;
-	VulkanMemMngr * mMemoryManager;
+	std::unique_ptr<DescriptorPool> mDescriptorPool;
+	std::unique_ptr<CommandPool>	mCommandPool;
+	std::unique_ptr<VulkanMemMngr> mMemoryManager;
 
 
 	ShaderModule * mVert;
-	ShaderModule * mFrag;
-	VulkanPipeline * mPipeline;
+	ShaderModule * mFrag, *mFrag2;
+	VulkanPipeline * mPipeline, *mPipeline2;
+	RenderInstance * mRenderInstance, *mRenderInstance2;
 
 
 
-	std::vector<VulkanImage> mPresentableImageArray;
+	std::vector<VulkanImage>			mPresentableImageArray;
 	std::deque<SyncedPresentable>		mAvailableImageIndicesArray;
 	std::mutex							mAvailableImageIndicesArrayLock;
 

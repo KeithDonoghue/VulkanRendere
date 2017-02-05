@@ -1,3 +1,7 @@
+#ifndef MY_ENGINE_HDR 
+#define MY_ENGINE_HDR 1
+
+
 #define VK_USE_PLATFORM_WIN32_KHR 1
 
 #include <vulkan/vulkan.h>
@@ -52,7 +56,9 @@ public:
 	void DumpSurfaceInfoToFile();
 	void CreateSwapchain();
 	void SpawnUpdateThread();
+	void Run();
 	void Update();
+	void TakeInput(unsigned int);
 
 
 
@@ -79,6 +85,8 @@ private:
 	Swapchain * m_TheSwapchain;
 	VulkanDevice *  mVulkanDevice;
 
+	int mWindowWidth, mWindowHeight;
+
 	std::vector<std::string>		m_AvailableExtensionNames;
 	std::vector<std::string>		m_AvailableLayerNames;
 
@@ -87,7 +95,6 @@ private:
 
 	VkSurfaceCapabilitiesKHR		mSurfaceCapabilities;
 
-	
 	VkInstance  TheVulkanInstance ;
 
 	std::vector<VkPhysicalDevice>		m_AvailablePhysicalDevices;
@@ -136,3 +143,4 @@ VKAPI_ATTR VkBool32 VKAPI_CALL FirstAllPurposeDebugReportCallback(
 	void*                       pUserData);
 
 
+#endif // MY_ENGINE_HDR 

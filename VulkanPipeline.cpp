@@ -6,6 +6,9 @@
 
 #include "EngineLogging.h"
 
+
+
+
 VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice, RenderPass& theRenderPass, ShaderModule& vert, ShaderModule& frag) :
 mDevice(theDevice)
 {
@@ -62,6 +65,8 @@ mDevice(theDevice)
 	dynamicStates[0] = VK_DYNAMIC_STATE_VIEWPORT;
 	dynamicStates[1] = VK_DYNAMIC_STATE_SCISSOR;
 
+	// Dynamic State
+	DScreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	DScreateInfo.dynamicStateCount = 2;
 	DScreateInfo.pDynamicStates = dynamicStates;
 
@@ -75,12 +80,12 @@ mDevice(theDevice)
 	createInfo.pVertexInputState = &VIScreateInfo;
 	createInfo.pInputAssemblyState = &IAcreateInfo;
 	createInfo.pTessellationState = nullptr; // &TScreateInfo;
-	createInfo.pViewportState = &VScreateInfo;
-	createInfo.pRasterizationState = &RScreateInfo;
+	createInfo.pViewportState =  CreateViewportState( &VScreateInfo);
+	createInfo.pRasterizationState = CreateRasterisationState(&RScreateInfo);
 	createInfo.pMultisampleState = &MScreateInfo;
-	createInfo.pDepthStencilState = &DSScreateInfo;
+	createInfo.pDepthStencilState = CreateDepthStencilState(&DSScreateInfo);
 	createInfo.pColorBlendState = &CBScreateInfo;
-	createInfo.pDynamicState = nullptr; &DScreateInfo; // &DScreateInfo;
+	createInfo.pDynamicState = &DScreateInfo; // &DScreateInfo;
 
 
 
@@ -92,20 +97,20 @@ mDevice(theDevice)
 	// Vertex Input state
 	VkVertexInputBindingDescription VIBD = {};
 	VIBD.binding = 0;
-	VIBD.stride = 5 * sizeof(float);
+	VIBD.stride = 6 * sizeof(float);
 	VIBD.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 	std::vector<VkVertexInputAttributeDescription> VIAD(2);
 
 	VIAD[0].location = 0;
 	VIAD[0].binding = 0;
-	VIAD[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+	VIAD[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 	VIAD[0].offset = 0;
 
 	VIAD[1].location = 1;
 	VIAD[1].binding = 0;
 	VIAD[1].format = VK_FORMAT_R32G32_SFLOAT;
-	VIAD[1].offset = 3 * sizeof(float);
+	VIAD[1].offset = 4 * sizeof(float);
 
 
 	VIScreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -122,54 +127,11 @@ mDevice(theDevice)
 
 
 
-	// Viewport state
-	VkViewport theViewport = {};
-	theViewport.width = 400;
-	theViewport.height = 400;
-	theViewport.minDepth = 0.0f;
-	theViewport.maxDepth = 1.0f;
-
-	VkRect2D ScissorRect = {};
-	ScissorRect.extent.width = 400;
-	ScissorRect.extent.height = 400;
-	ScissorRect.offset = { 0, 0 };
-
-	VScreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	VScreateInfo.viewportCount = 1;
-	VScreateInfo.pViewports = &theViewport;
-	VScreateInfo.scissorCount = 1;
-	VScreateInfo.pScissors = &ScissorRect;
-
-
-	//Rasterizer State
-	RScreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	RScreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-	RScreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	RScreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-	RScreateInfo.depthClampEnable = VK_FALSE;
-	RScreateInfo.rasterizerDiscardEnable = VK_FALSE;
-	RScreateInfo.depthBiasEnable = VK_FALSE;
-	RScreateInfo.lineWidth = 1.0f;
-
 	
 	
 	//Multisample state
 	MScreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	MScreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-
-	
-	// Depth Stencil state
-	DSScreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	DSScreateInfo.depthTestEnable = VK_TRUE;
-	DSScreateInfo.depthWriteEnable = VK_TRUE;
-	DSScreateInfo.depthCompareOp = VK_COMPARE_OP_ALWAYS;
-	DSScreateInfo.depthBoundsTestEnable = VK_FALSE;
-	DSScreateInfo.back.failOp = VK_STENCIL_OP_KEEP;
-	DSScreateInfo.back.passOp = VK_STENCIL_OP_KEEP;
-	DSScreateInfo.back.compareOp = VK_COMPARE_OP_ALWAYS;
-	DSScreateInfo.stencilTestEnable = VK_FALSE;
-	DSScreateInfo.front = DSScreateInfo.back;
 	
 
 	//ColourBlend state
@@ -182,16 +144,82 @@ mDevice(theDevice)
 	CBScreateInfo.pAttachments = &attachState;
 
 
-	// Dynamic State
-	DScreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-
-
-
 	VkResult result = vkCreateGraphicsPipelines(mDevice.getVkDevice(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &m_TheVulkanPipeline);
 	if (result != VK_SUCCESS)
 	{
 		EngineLog("Failed to create pipeline.");
 	}	
+}
+
+
+
+
+
+VkPipelineDepthStencilStateCreateInfo * VulkanPipeline::CreateDepthStencilState(
+	VkPipelineDepthStencilStateCreateInfo * DSScreateInfo)
+{
+
+	// Depth Stencil state
+	DSScreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	DSScreateInfo->depthTestEnable = VK_TRUE;
+	DSScreateInfo->depthWriteEnable = VK_TRUE;
+	DSScreateInfo->depthCompareOp = VK_COMPARE_OP_LESS;
+	DSScreateInfo->depthBoundsTestEnable = VK_FALSE;
+	DSScreateInfo->back.failOp = VK_STENCIL_OP_KEEP;
+	DSScreateInfo->back.passOp = VK_STENCIL_OP_KEEP;
+	DSScreateInfo->back.compareOp = VK_COMPARE_OP_ALWAYS;
+	DSScreateInfo->stencilTestEnable = VK_FALSE;
+	DSScreateInfo->front = DSScreateInfo->back;
+
+	return DSScreateInfo;
+}
+
+
+
+
+
+VkPipelineViewportStateCreateInfo * VulkanPipeline::CreateViewportState(
+	VkPipelineViewportStateCreateInfo*  VScreateInfo)
+{
+
+	// Viewport state
+	VkViewport theViewport = {};
+	theViewport.width = 800;
+	theViewport.height = 400;
+	theViewport.minDepth = 0.0f;
+	theViewport.maxDepth = 1.0f;
+
+	VkRect2D ScissorRect = {};
+	ScissorRect.extent.width = 200;
+	ScissorRect.extent.height = 400;
+	ScissorRect.offset = { 0, 0 };
+
+	VScreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	VScreateInfo->viewportCount = 1;
+	VScreateInfo->pViewports = &theViewport;
+	VScreateInfo->scissorCount = 1;
+	VScreateInfo->pScissors = &ScissorRect;
+
+	return VScreateInfo;
+}
+
+
+
+VkPipelineRasterizationStateCreateInfo * VulkanPipeline::CreateRasterisationState(
+	VkPipelineRasterizationStateCreateInfo*  RScreateInfo)
+{
+
+	//Rasterizer State
+	RScreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	RScreateInfo->polygonMode = VK_POLYGON_MODE_FILL;
+	RScreateInfo->cullMode = VK_CULL_MODE_NONE;
+	RScreateInfo->frontFace = VK_FRONT_FACE_CLOCKWISE;
+	RScreateInfo->depthClampEnable = VK_FALSE;
+	RScreateInfo->rasterizerDiscardEnable = VK_FALSE;
+	RScreateInfo->depthBiasEnable = VK_FALSE;
+	RScreateInfo->lineWidth = 5.0f;
+
+	return RScreateInfo;
 }
 
 
@@ -225,14 +253,27 @@ void VulkanPipeline::CreatePipelineLayout(RenderPass& theRenderPass, ShaderModul
 
 	mDescSet = mDevice.GetDescriptorPool().AllocateDescriptorSet(mSetLayout);
 
+	VkPushConstantRange pushRange[3] = {};
+	pushRange[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	pushRange[0].offset = 0;
+	pushRange[0].size = 16;
+
+	pushRange[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushRange[1].offset = 16;
+	pushRange[1].size = 64;
+
+	pushRange[2].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushRange[2].offset = 80;
+	pushRange[2].size = 64;
+
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutCreateInfo.pNext = nullptr;
 	pipelineLayoutCreateInfo.flags = 0; // reserved for fuiture use.
 	pipelineLayoutCreateInfo.setLayoutCount = 1;
 	pipelineLayoutCreateInfo.pSetLayouts = &mSetLayout;
-	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = 3;
+	pipelineLayoutCreateInfo.pPushConstantRanges = pushRange;
 
 
 	result = vkCreatePipelineLayout(mDevice.getVkDevice(), &pipelineLayoutCreateInfo, nullptr, &mPipelineLayout);

@@ -1,3 +1,6 @@
+#ifndef COMMAND_POOL_HDR
+#define COMMAND_POOL_HDR 1
+
 #include <Vulkan/vulkan.h>
 
 #include <deque>
@@ -29,3 +32,5 @@ private:
 	std::stack<CommandBuffer*> mFreeStack;
 
 };
+
+#endif //  COMMAND_POOL_HDR

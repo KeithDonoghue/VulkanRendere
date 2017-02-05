@@ -11,11 +11,14 @@
 
 #include <cstring>
 
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/vec4.hpp> // glm::vec4
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
 
 
-
-CommandBuffer::CommandBuffer(CommandPool * thePool) :
+CommandBuffer::CommandBuffer(CommandPool& thePool) :
 mCommandBufferState(CB_INITIAL_STATE),
 mPool(thePool),
 DrawBuffer(nullptr)
@@ -32,11 +35,11 @@ void CommandBuffer::Init()
 
 	mAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	mAllocateInfo.pNext = nullptr;
-	mAllocateInfo.commandPool = mPool->GetVkCommandPool();
+	mAllocateInfo.commandPool = mPool.GetVkCommandPool();
 	mAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	mAllocateInfo.commandBufferCount = 1;
 	
-	VkResult result = vkAllocateCommandBuffers(mPool->GetVulkanDevice()->getVkDevice(), &mAllocateInfo, &m_TheVulkanCommandBuffer);
+	VkResult result = vkAllocateCommandBuffers(mPool.GetVulkanDevice()->getVkDevice(), &mAllocateInfo, &m_TheVulkanCommandBuffer);
 
 	if (result != VK_SUCCESS)
 	{
@@ -58,7 +61,7 @@ void CommandBuffer::InitializeFence()
 	createInfo.pNext = nullptr;
 	createInfo.flags = 0; // VK_FENCE_CREATE_SIGNALED_BIT
 
-	VkResult result = vkCreateFence(mPool->GetVulkanDevice()->getVkDevice(), &createInfo, nullptr, &mCompletionFence);
+	VkResult result = vkCreateFence(mPool.GetVulkanDevice()->getVkDevice(), &createInfo, nullptr, &mCompletionFence);
 
 	if (result != VK_SUCCESS)
 	{
@@ -72,7 +75,7 @@ void CommandBuffer::InitializeFence()
 
 bool CommandBuffer::IsComplete()
 {
-	VkResult status  =  vkGetFenceStatus(mPool->GetVulkanDevice()->getVkDevice(), mCompletionFence);
+	VkResult status  =  vkGetFenceStatus(mPool.GetVulkanDevice()->getVkDevice(), mCompletionFence);
 	if (status == VK_SUCCESS)
 	{
 		return true;
@@ -95,57 +98,13 @@ CommandBuffer::~CommandBuffer()
 {
 	
 	//Shouldn't be calling destructor without checking complete, but here for debugging.
-
 	//vkWaitForFences(mPool->GetVulkanDevice()->GetVkDevice(), 1, &mCompletionFence, VK_TRUE, UINT64_MAX);
 
 	delete DrawBuffer;
 
-	vkDestroyFence(mPool->GetVulkanDevice()->getVkDevice(), mCompletionFence, nullptr);
+	vkDestroyFence(mPool.GetVulkanDevice()->getVkDevice(), mCompletionFence, nullptr);
 
-	vkFreeCommandBuffers(mPool->GetVulkanDevice()->getVkDevice(), mPool->GetVkCommandPool(), 1, &m_TheVulkanCommandBuffer);
-}
-
-
-
-
-
-void CommandBuffer::CopyImage(VulkanImage& src, VulkanImage& dst)
-{
-
-	BeginCommandBuffer();
-
-
-	VkImageCopy copyRegion = {};
-		
-	VkImageSubresourceLayers srcSubresource = {};
-	VkImageSubresourceLayers dstSubresource = {};
-
-
-	srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-	srcSubresource.baseArrayLayer = 0;
-	dstSubresource.baseArrayLayer = 0;
-
-	srcSubresource.layerCount = 1;
-	dstSubresource.layerCount = 1;
-
-	srcSubresource.mipLevel = 0;
-	dstSubresource.mipLevel = 0;
-
-	copyRegion.srcSubresource = srcSubresource;
-	copyRegion.srcOffset = { 0, 0, 0 };
-	copyRegion.dstSubresource = dstSubresource;
-	copyRegion.dstOffset = { 0, 0, 0 };
-	copyRegion.extent = { 400, 400, 1 };
-
-	vkCmdCopyImage(GetVkCommandBuffer(),
-		src.GetVkImage(), 
-		VK_IMAGE_LAYOUT_GENERAL, 
-		dst.GetVkImage(), 
-		VK_IMAGE_LAYOUT_GENERAL, 
-		1, 
-		&copyRegion);
+	vkFreeCommandBuffers(mPool.GetVulkanDevice()->getVkDevice(), mPool.GetVkCommandPool(), 1, &m_TheVulkanCommandBuffer);
 }
 
 
@@ -160,7 +119,7 @@ void CommandBuffer::BeginCommandBuffer()
 	}
 
 
-	VkResult  result = vkResetFences(mPool->GetVulkanDevice()->getVkDevice(), 1, &mCompletionFence);
+	VkResult  result = vkResetFences(mPool.GetVulkanDevice()->getVkDevice(), 1, &mCompletionFence);
 
 	if (result != VK_SUCCESS)
 	{
@@ -234,79 +193,121 @@ void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
 
 
 
-void CommandBuffer::DoDraw(RenderPass&  theRenderPass, VulkanPipeline& thePipeline, VulkanImage& theImage, VkSampler theSampler, VkImageView theView)
+void CommandBuffer::StartDraw(RenderPass&  theRenderPass,
+	VulkanPipeline& thePipeline,
+	VulkanImage& theImage,
+	VkSampler theSampler,
+	VkImageView theView)
 {
+	static bool dirty = true;
+
 	VkRenderPassBeginInfo beginInfo = theRenderPass.Begin();
 
 	vkCmdBeginRenderPass(GetVkCommandBuffer(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdBindPipeline(GetVkCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, thePipeline.getVkPipeline());
 
-	if (DrawBuffer == nullptr)
+	if (dirty)
 	{
-		const float vb[6][5] = {
-			/*      position             texcoord */
-			{ -0.5f, -1.0f, 0.25f, 1.0f, 0.0f },
-			{ 0.5f, -1.0f, 0.25f, 1.0f, 1.0f },
-			{ 0.5f, 1.0f, 1.0f, 0.5f, 1.0f },
-			{ 0.5f, 1.0f, 1.0f, 0.5f, 1.0f },
-			{ -0.5f, 1.0f, 1.0f, 0.5f, 1.0f },
-			{ -0.5f, -1.0f, 0.25f, 0.0f, 0.0f },
-		};
+		VkWriteDescriptorSet writeDesc = {};
+		VkDescriptorImageInfo imageInfo = {};
 
-		DrawBuffer = VulkanBuffer::CreateVertexBuffer(theRenderPass.GetVulkanDevice(), sizeof(vb));
-		DrawBuffer->LoadBufferData(vb, sizeof(vb));
+		imageInfo.imageLayout = theImage.GetLayout();
+		imageInfo.imageView = theView;
+		imageInfo.sampler = theSampler;
+
+
+		writeDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDesc.pNext = nullptr;
+		writeDesc.dstSet = thePipeline.getDescSet();
+		writeDesc.dstBinding = 0;
+		writeDesc.dstArrayElement = 0;
+		writeDesc.descriptorCount = 1;
+		writeDesc.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		writeDesc.pImageInfo = &imageInfo;
+
+		vkUpdateDescriptorSets(theRenderPass.GetVulkanDevice().getVkDevice(), 1, &writeDesc, 0, nullptr);
 	}
 
-	VkWriteDescriptorSet writeDesc = {};
-	VkDescriptorImageInfo imageInfo = {};
-
-	imageInfo.imageLayout = theImage.GetLayout();
-	imageInfo.imageView = theView;
-	imageInfo.sampler = theSampler;
-
-
-	writeDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDesc.pNext = nullptr;
-	writeDesc.dstSet = thePipeline.getDescSet();
-	writeDesc.dstBinding = 0;
-	writeDesc.dstArrayElement = 0;
-	writeDesc.descriptorCount = 1;
-	writeDesc.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	writeDesc.pImageInfo = &imageInfo;
-
-	vkUpdateDescriptorSets(theRenderPass.GetVulkanDevice().getVkDevice(), 1, &writeDesc, 0, nullptr);
-
-	vkCmdBindDescriptorSets(GetVkCommandBuffer(), 
-		VK_PIPELINE_BIND_POINT_GRAPHICS, 
-		thePipeline.getLayout(), 
-		0, 
-		1, 
-		thePipeline.getDescSetAddr(), 
-		0, 
+	vkCmdBindDescriptorSets(GetVkCommandBuffer(),
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		thePipeline.getLayout(),
+		0,
+		1,
+		thePipeline.getDescSetAddr(),
+		0,
 		nullptr);
-	//vkCmdSetViewVport()
-	//vkCmdSetScissor();
 
+	VkViewport theViewport = theRenderPass.GetFrameBuffer().getFullViewPort();
+	VkRect2D scissorRect = theRenderPass.GetFrameBuffer().getFBRect();
+
+	vkCmdSetViewport(GetVkCommandBuffer(), 0, 1, &theViewport);
+	vkCmdSetScissor(GetVkCommandBuffer(), 0, 1, &scissorRect);
+
+}
+
+
+
+
+void CommandBuffer::SetUpMVP(VulkanPipeline& thePipeline, glm::mat4 & MVP)
+{
+
+	float colour[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+	
+	// glm perspecgive matrices will transform into NDC of z: -1(near) to +1(far), we need 0 to 1;
+	//glm::mat4 correction = glm::scale(glm::mat4(), glm::vec3(1.0f, 1.0f, 0.5f));
+	//correction = glm::translate(correction, glm::vec3(0.0f, 0.0f, 1.0f));
+	//correction = glm::inverse(correction);
+
+	glm::mat4 correction = glm::mat4();
+
+
+		vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT , 0, sizeof(colour), colour);
+		vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 16, 64, &MVP[0]);
+		vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 80, 64, &correction[0]);
+
+}
+
+
+
+
+
+void CommandBuffer::Draw(VertexDraw theDraw)
+{
 	VkDeviceSize offset = 0;
-	vkCmdBindVertexBuffers(GetVkCommandBuffer(), 0, 1, DrawBuffer->GetVkBufferAddr(), &offset);
-	/*
-	VkViewport viewport;
-	memset(&viewport, 0, sizeof(viewport));
-	viewport.height = (float)400;
-	viewport.width = (float)400;
-	viewport.minDepth = (float)0.0f;
-	viewport.maxDepth = (float)1.0f;
-	vkCmdSetViewport(GetVkCommandBuffer(), 0, 1, &viewport);
+	vkCmdBindVertexBuffers(GetVkCommandBuffer(), 0, 1, theDraw.mDrawBuffer->GetVkBufferAddr(), &offset);
 
-	VkRect2D scissor;
-	memset(&scissor, 0, sizeof(scissor));
-	scissor.extent.width = 400;
-	scissor.extent.height = 400;
-	scissor.offset.x = 0;
-	scissor.offset.y = 0;
-	vkCmdSetScissor(GetVkCommandBuffer(), 0, 1, &scissor);
-	*/
-	vkCmdDraw(GetVkCommandBuffer(), 6, 1, 0, 0);	
+	vkCmdDraw(GetVkCommandBuffer(), 
+		theDraw.mVertexCount, 
+		theDraw.mInstanceCount, 
+		theDraw.mVertexOffset,
+		theDraw.mInstanceOffset);
+}
+
+
+
+
+
+void CommandBuffer::Draw(IndexDraw theDraw)
+{
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(GetVkCommandBuffer(), 0, 1, theDraw.mDrawBuffer->GetVkBufferAddr(), &offset);
+
+	vkCmdBindIndexBuffer(GetVkCommandBuffer(), theDraw.mIndexBuffer->GetVkBuffer(), offset, VK_INDEX_TYPE_UINT32);
+
+	vkCmdDrawIndexed(GetVkCommandBuffer(),
+		theDraw.mIndexCount,
+		theDraw.mInstanceCount,
+		theDraw.mIndexOffset,
+		theDraw.mVertexOffset,
+		theDraw.mInstanceOffset);
+}
+
+
+
+
+
+void CommandBuffer::EndDraw(RenderPass& theRenderPass, uint32_t primitiveCount)
+{
 	vkCmdEndRenderPass(GetVkCommandBuffer());
 
 	theRenderPass.End();

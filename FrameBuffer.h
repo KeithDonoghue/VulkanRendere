@@ -15,8 +15,13 @@ public:
 	~FrameBuffer();
 	VkFramebuffer getVkFramebuffer() { return m_TheVulkanFramebuffer; }
 	void init(std::vector<VulkanImage*>);
+	VkViewport	getFullViewPort();
+	VkRect2D	getFBRect();
 
-private :
+	uint32_t getWidth(){ return mWidth; }
+	uint32_t getHeight(){ return mHeight; }
+
+private: //members
 	VkFramebufferCreateInfo CreateInfo;
 	RenderPass&				mRenderPass;
 	std::vector<VkImageView> mAttachmentViews;

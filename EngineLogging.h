@@ -1,3 +1,6 @@
+#ifndef ENGINE_LOGGING_HDR
+#define ENGINE_LOGGING_HDR 1
+
 #include <iostream>
 #include <fstream>
 #include <mutex>
@@ -46,3 +49,5 @@ private:
 #else
 #define EngineLog(...) do {} while(0);
 #endif 
+
+#endif // ENGINE_LOGGING_HDR

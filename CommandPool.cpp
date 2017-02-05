@@ -56,7 +56,7 @@ CommandPool::~CommandPool()
 
 void CommandPool::CreateCommandBuffer()
 {
-	mCurrentCommandBuffer = new CommandBuffer(this);
+	mCurrentCommandBuffer = new CommandBuffer(*this);
 }
 
 

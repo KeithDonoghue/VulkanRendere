@@ -1,3 +1,6 @@
+#ifndef DESCRIPTOR_POOL_HDR
+#define DESCRIPTOR_POOL_HDR 1
+
 #include "vulkan/vulkan.h"
 
 class VulkanDevice;
@@ -12,3 +15,5 @@ private:
 
 	VulkanDevice& mDevice;
 };
+
+#endif //  DESCRIPTOR_POOL_HDR

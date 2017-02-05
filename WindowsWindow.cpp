@@ -1,28 +1,37 @@
 #include "WindowsWindow.h"
-
+#include "MyEngine.h"
 #ifndef _MSC_VER
 #define _ISOC11_SOURCE /* for aligned_alloc() */
 #endif
 
 
+#define ENGINE_LOGGING_ENABLED 1
 #include "Swapchain.h"
+#include "EngineLogging.h"
 
 
-
-EngineWindow::EngineWindow(int x, int y, int width, int height)
+EngineWindow::EngineWindow(MyEngine & theEngine, int x, int y, int width, int height):
+	mEngine(theEngine),
+	mWidth(width),
+	mHeight(height),
+	mXoffset(x),
+	mYoffset( y),
+	name("Destroyer")
 {
-	m_width = width;
-	m_height = height;
-	x_offset = x;
-	y_offset = y;
-	name = "Destroyer";
 	mInitialized.store(0);
 }
+
+
+
+
 
 EngineWindow::~EngineWindow()
 {
 	vkDestroySurfaceKHR(m_InstanceForSurface,m_TheVulkanPresentSurface,nullptr);
 }
+
+
+
 
 
 void EngineWindow::Initialize(HINSTANCE AppInstance)
@@ -53,14 +62,14 @@ void EngineWindow::Initialize(HINSTANCE AppInstance)
 
 
 	// Create window with the registered class:
-	RECT wr = { 0, 0, m_width, m_height };
+	RECT wr = { 0, 0, mWidth, mHeight };
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 	m_handle = CreateWindowEx(0,
 		name.c_str(),           // class name
 		name.c_str(),           // app name
 		WS_OVERLAPPEDWINDOW | // window style
 		WS_VISIBLE | WS_SYSMENU,
-		x_offset, y_offset,           // x/y coords
+		mXoffset, mYoffset,           // x/y coords
 		wr.right - wr.left, // width
 		wr.bottom - wr.top, // height
 		NULL,               // handle to parent
@@ -78,6 +87,7 @@ void EngineWindow::Update()
 {
 	RedrawWindow(m_handle, NULL, NULL, RDW_INTERNALPAINT);
 }
+
 
 
 
@@ -108,6 +118,17 @@ void EngineWindow::SetUpSwapChain(Swapchain* theSwapchain)
 
 
 
+void EngineWindow::Resize(uint32_t width, uint32_t height)
+{
+	mWidth = width;
+	mHeight = height;
+	mSwapchain->Resize(width, height);
+}
+
+
+
+
+
 // MS-Windows event handling function:
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	CREATESTRUCT * temp;
@@ -115,6 +136,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 
 	switch (uMsg) {
+	case WM_SIZE:
+		EngineLog("Resizing: ", wParam, HIWORD(lParam), LOWORD(lParam));
+		presentable = reinterpret_cast<EngineWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+		if (presentable)
+			presentable->Resize(LOWORD(lParam), HIWORD(lParam));
+		return TRUE;
+	case WM_KEYDOWN:
+		EngineLog("KeyDown", wParam);
+		presentable = reinterpret_cast<EngineWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+		if (presentable)
+			presentable->SendKeyEvent(wParam);
 	case WM_CREATE:
 		return 0;
 	case WM_CLOSE:
@@ -135,6 +167,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	}
 	return (DefWindowProc(hWnd, uMsg, wParam, lParam));
 }
+
+
+
+
+
+VkExtent2D EngineWindow::GetExtent()
+{
+	VkExtent2D extent = {};
+	extent.width = mWidth;
+	extent.height = mHeight;
+	return extent;
+}
+
+
+
+
 
 void EngineWindow::InitializeSurface(VkInstance assosciatedInstance)
 {
@@ -158,5 +206,11 @@ void EngineWindow::InitializeSurface(VkInstance assosciatedInstance)
 }
 
 
+
+
+void EngineWindow::SendKeyEvent(unsigned int key)
+{
+	mEngine.TakeInput(key);
+}
 
 

@@ -53,3 +53,11 @@ ShaderModule * ShaderModule::CreateVertexShader(VulkanDevice& theDevice)
 {
 	return new ShaderModule(theDevice, "Resources/vert.spv");
 }
+
+
+
+
+ShaderModule * ShaderModule::CreateFragmentShader2(VulkanDevice& theDevice)
+{
+	return new ShaderModule(theDevice, "Resources/red.spv");
+}

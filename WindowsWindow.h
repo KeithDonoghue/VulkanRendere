@@ -11,6 +11,7 @@
 
 
 class Swapchain;
+class MyEngine;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -19,26 +20,30 @@ class EngineWindow {
 public:
 	EngineWindow();
 	~EngineWindow();
-	EngineWindow(int x, int y, int width, int height);
+	EngineWindow(MyEngine&, int x, int y, int width, int height);
 	void Initialize(HINSTANCE);
 	void Redraw();
 	void Update();
+	void Resize(uint32_t, uint32_t);
 	void InitializeSurface(VkInstance);
 	void SetUpSwapChain(Swapchain*);
+	void SendKeyEvent(unsigned int);
 	VkSurfaceKHR GetSurface(){ return m_TheVulkanPresentSurface; }
+	VkExtent2D GetExtent();
 
 
 private:
 	std::string name;
 	std::atomic<bool> mInitialized;
-	int m_width;
-	int m_height;
-	int x_offset;
-	int y_offset;
+	int mWidth;
+	int mHeight;
+	int mXoffset;
+	int mYoffset;
 	HWND m_handle;
 	HINSTANCE m_WindowsAppInstance;
 
 	Swapchain * mSwapchain;
+	MyEngine & mEngine;
 
 	VkInstance		m_InstanceForSurface;
 	VkSurfaceKHR	m_TheVulkanPresentSurface;

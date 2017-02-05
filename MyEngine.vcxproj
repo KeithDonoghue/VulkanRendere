@@ -44,7 +44,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../1.0.30.0/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../1.0.30.0/Include;D:/myCode/glm-0.9.8.4/glm/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -59,7 +59,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\1.0.30.0\Include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\1.0.30.0\Include;D:/myCode/glm-0.9.8.4/glm/;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -73,11 +73,15 @@
     <ClInclude Include="CommandBuffer.h" />
     <ClInclude Include="CommandPool.h" />
     <ClInclude Include="DescriptorPool.h" />
+    <ClInclude Include="EngineImage.h" />
     <ClInclude Include="EngineLogging.h" />
+    <ClInclude Include="EngineRenderPass.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="ImageLoader.h" />
+    <ClInclude Include="RenderInstance.h" />
     <ClInclude Include="ShaderModule.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="VertexBuffer.h" />
     <ClInclude Include="VulkanBuffer.h" />
     <ClInclude Include="VulkanDevice.h" />
     <ClInclude Include="MyEngine.h" />
@@ -93,9 +97,13 @@
     <ClCompile Include="CommandBuffer.cpp" />
     <ClCompile Include="CommandPool.cpp" />
     <ClCompile Include="DescriptorPool.cpp" />
+    <ClCompile Include="EngineImage.cpp" />
     <ClCompile Include="EngineLogging.cpp" />
+    <ClCompile Include="EngineRenderPass.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
+    <ClCompile Include="RenderInstance.cpp" />
     <ClCompile Include="ShaderModule.cpp" />
+    <ClCompile Include="VertexBuffer.cpp" />
     <ClCompile Include="VulkanBuffer.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
     <ClCompile Include="main.cpp" />

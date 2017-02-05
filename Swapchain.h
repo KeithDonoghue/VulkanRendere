@@ -7,9 +7,10 @@
 
 class Swapchain{
 public:
-	Swapchain(VulkanDevice*, EngineWindow*);
-	Swapchain(VulkanDevice*, EngineWindow*, VkSwapchainCreateInfoKHR);
+	Swapchain(VulkanDevice*, EngineWindow&);
+	Swapchain(VulkanDevice*, EngineWindow&, VkSwapchainCreateInfoKHR);
 	~Swapchain();
+	void Resize(uint32_t, uint32_t){};
 	void GetImages();
 	void Update();
 
@@ -19,7 +20,7 @@ private:
 private:
 	VkSwapchainCreateInfoKHR mCreateInfo;
 	VulkanDevice * mDevice;
-	EngineWindow * mWindow;
+	EngineWindow & mWindow;
 
 	VkSwapchainKHR theVulkanSwapchain;
 

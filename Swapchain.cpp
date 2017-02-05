@@ -10,7 +10,7 @@
 
 #include <chrono>
 
-Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
+Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow & theWindow):
 	mDevice(theDevice),
 	mWindow(theWindow),
 	mNumSemaphores(0),
@@ -18,10 +18,6 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 	mImagesHeld(0)
 { 
 
-	VkExtent2D WindowSize;
-	memset(&WindowSize, 0, sizeof(VkExtent2D));
-	WindowSize.width = 400;
-	WindowSize.height = 400;
 
 
 	memset(&mCreateInfo, 0, sizeof(mCreateInfo));
@@ -32,7 +28,7 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 	mCreateInfo.minImageCount		= 4;
 	mCreateInfo.imageFormat			= VK_FORMAT_B8G8R8A8_UNORM;
 	mCreateInfo.imageColorSpace		= VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-	mCreateInfo.imageExtent			= WindowSize;
+	mCreateInfo.imageExtent			= theWindow.GetExtent();
 	mCreateInfo.imageArrayLayers	= 1;
 	mCreateInfo.imageUsage			= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	mCreateInfo.imageSharingMode	= VK_SHARING_MODE_EXCLUSIVE;
@@ -51,7 +47,7 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow):
 
 
 
-Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow * theWindow, VkSwapchainCreateInfoKHR theCreateInfo):
+Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow & theWindow, VkSwapchainCreateInfoKHR theCreateInfo):
 	mDevice(theDevice),
 	mWindow(theWindow),
 	mCreateInfo(theCreateInfo)
@@ -78,7 +74,7 @@ Swapchain::~Swapchain()
 void Swapchain::init()
 {
 
-	mCreateInfo.surface = mWindow->GetSurface();
+	mCreateInfo.surface = mWindow.GetSurface();
 
 	VkResult result = vkCreateSwapchainKHR(mDevice->getVkDevice(), &mCreateInfo, nullptr, &theVulkanSwapchain);
 
@@ -117,7 +113,10 @@ void Swapchain::GetImages()
 	}
 	else
 	{
-		mDevice->PopulatePresentableImages(SwpachainImages, mSwapchainImageCount);
+		mDevice->PopulatePresentableImages(SwpachainImages, 
+			mSwapchainImageCount, 
+			mCreateInfo.imageExtent.width, 
+			mCreateInfo.imageExtent.height);
 	}
 
 

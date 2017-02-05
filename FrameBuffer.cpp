@@ -83,6 +83,7 @@ void FrameBuffer::init(std::vector<VulkanImage*> attachments)
 
 
 
+
 FrameBuffer::~FrameBuffer()
 {
 	for (auto it : mAttachmentViews)
@@ -92,4 +93,34 @@ FrameBuffer::~FrameBuffer()
 
 	vkDestroyFramebuffer(mRenderPass.GetVulkanDevice().getVkDevice(), m_TheVulkanFramebuffer, nullptr);
 
+}
+
+
+
+
+
+VkViewport FrameBuffer::getFullViewPort()
+{
+	VkViewport FBView = {};
+	FBView.x = 0;
+	FBView.y = 0;
+	FBView.width	= getWidth();
+	FBView.height	= getHeight();
+	FBView.maxDepth = 1.0f;
+	FBView.minDepth = 0.0f;
+
+	return FBView;
+}
+
+
+
+
+
+VkRect2D FrameBuffer::getFBRect()
+{
+	VkRect2D rect = {};
+	rect.offset = { 0, 0 };
+	rect.extent = { getWidth(), getHeight() };
+
+	return rect;
 }

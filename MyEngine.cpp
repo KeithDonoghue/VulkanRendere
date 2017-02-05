@@ -67,9 +67,12 @@ MyEngine::~MyEngine()
 
 void MyEngine::SetWindowOffsetAndSize(int x, int y, int width, int height)
 {
+	mWindowWidth = width;
+	mWindowHeight = height;
+
 	if (m_TheWindow == nullptr)
 	{
-		m_TheWindow = new EngineWindow(x, y, width, height);
+		m_TheWindow = new EngineWindow(*this, x, y, width, height);
 	}
 }
 
@@ -305,10 +308,11 @@ void MyEngine::CreateVulkanInstance()
 	UsingExtensions.push_back(m_AvailableExtensionNames[i].c_str());
 	*/
 	
-	//UsingLayers.push_back("VK_LAYER_LUNARG_api_dump");
 
-	//UsingLayers.push_back("VK_LAYER_LUNARG_standard_validation");
-
+#if _DEBUG
+	UsingLayers.push_back("VK_LAYER_LUNARG_api_dump");
+	UsingLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+#endif
 
 	UsingExtensions.push_back("VK_KHR_win32_surface");
 	UsingExtensions.push_back("VK_KHR_surface");
@@ -534,7 +538,7 @@ void MyEngine::DumpSurfaceInfoToFile()
 void MyEngine::CreateSwapchain()
 {
 
-	m_TheSwapchain = new Swapchain(mVulkanDevice, m_TheWindow);
+	m_TheSwapchain = new Swapchain(mVulkanDevice, *m_TheWindow);
 	m_TheWindow->SetUpSwapChain(m_TheSwapchain);
 }
 
@@ -620,17 +624,40 @@ VKAPI_ATTR VkBool32 VKAPI_CALL FirstAllPurposeDebugReportCallback(
 
 void MyEngine::SpawnUpdateThread()
 {
-	mRenderThread =  std::thread(&MyEngine::Update, std::ref(*this));
+	mRenderThread =  std::thread(&MyEngine::Run, std::ref(*this));
 }
 
 
 
 
-void MyEngine::Update()
+
+void MyEngine::Run()
 {
+	mVulkanDevice->CreateRenderTargets(mWindowWidth, mWindowHeight);
 	mVulkanDevice->CreateInitialData();
-	while(!mFinish)
+
+	while (!mFinish)
 	{
-		mVulkanDevice->Update();
+		Update();
 	}
+
+}
+
+
+
+
+
+void MyEngine::Update()
+{	
+	mVulkanDevice->Update();
+}
+
+
+
+
+
+void MyEngine::TakeInput(unsigned int keyPress)
+{
+	EngineLog("key: ", keyPress);
+	mVulkanDevice->TakeInput(keyPress);
 }
