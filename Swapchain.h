@@ -1,4 +1,5 @@
 #include "vulkan/vulkan.h"
+#include "ApiUsageHeader.h"
 
 #include "VulkanDevice.h"
 #include "WindowsWindow.h"

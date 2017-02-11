@@ -170,7 +170,7 @@ void Swapchain::Update()
 		mDevice->LockQueue();
 		VkResult result = vkAcquireNextImageKHR(mDevice->getVkDevice(),
 			theVulkanSwapchain,
-			100,
+			UINT64_MAX,
 			nextFreePresentable.mWaitForAcquireSemaphore,
 			VK_NULL_HANDLE,
 			&nextFreePresentable.mEngineImageIndex);
@@ -180,7 +180,7 @@ void Swapchain::Update()
 		{
 			mSemaphoreQueue.push_front(nextFreePresentable.mWaitForPresentSemaphore);
 			mSemaphoreQueue.push_front(nextFreePresentable.mWaitForAcquireSemaphore);
-			EngineLog("Failed to acquire image");
+			EngineLog("Failed to acquire image", VulkanResultString(result));
 		}
 		else
 		{
