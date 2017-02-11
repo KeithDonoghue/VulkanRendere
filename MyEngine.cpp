@@ -411,7 +411,47 @@ void MyEngine::FinishedFrameWork()
 
 void MyEngine::GetSurfaceCapabilities()
 {
+#if ENGINE_LOGGING_ENABLED
+	DumpSurfaceInfoToFile();
+#else
+	VkBool32  PresentingSupported;
+	VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(m_AvailablePhysicalDevices[0], 0, m_TheWindow->GetSurface(), &PresentingSupported);
 
+	memset(&mSurfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
+
+	result = fpGetPhysicalDeviceSurfaceCapabilitiesKHR(m_AvailablePhysicalDevices[0],
+		m_TheWindow->GetSurface(),
+		&mSurfaceCapabilities);
+
+
+
+	uint32_t surfaceFormatCount;
+	result = fpGetPhysicalDeviceSurfaceFormatsKHR(m_AvailablePhysicalDevices[0],
+		m_TheWindow->GetSurface(),
+		&surfaceFormatCount,
+		nullptr);
+
+	mSurfaceFormats.resize(surfaceFormatCount);
+
+	result = fpGetPhysicalDeviceSurfaceFormatsKHR(m_AvailablePhysicalDevices[0],
+		m_TheWindow->GetSurface(),
+		&surfaceFormatCount,
+		mSurfaceFormats.data());
+
+
+	uint32_t presentModeCount;
+	result = fpGetPhysicalDeviceSurfacePresentModesKHR(m_AvailablePhysicalDevices[0],
+		m_TheWindow->GetSurface(),
+		&presentModeCount,
+		nullptr);
+
+	mPresentModes.resize(presentModeCount);
+	result = fpGetPhysicalDeviceSurfacePresentModesKHR(m_AvailablePhysicalDevices[0],
+		m_TheWindow->GetSurface(),
+		&presentModeCount,
+		mPresentModes.data());
+
+#endif
 }
 
 
@@ -473,12 +513,12 @@ void MyEngine::DumpSurfaceInfoToFile()
 		&surfaceFormatCount,
 		nullptr);
 
-	VkSurfaceFormatKHR * surfaceFormats = (VkSurfaceFormatKHR*)malloc(sizeof(VkSurfaceFormatKHR)* surfaceFormatCount);
+	mSurfaceFormats.resize(surfaceFormatCount);
 
 	result = fpGetPhysicalDeviceSurfaceFormatsKHR(m_AvailablePhysicalDevices[0],
 		m_TheWindow->GetSurface(),
 		&surfaceFormatCount,
-		surfaceFormats);
+		mSurfaceFormats.data());
 
 
 	if (result != VK_SUCCESS)
@@ -491,13 +531,12 @@ void MyEngine::DumpSurfaceInfoToFile()
 		{
 			Log << std::endl;
 			Log << "Device 0 formats:	" << std::endl;
-			Log << "	format	:		" << surfaceFormats[format].format << std::endl;
-			Log << "	Colour Space:	" << surfaceFormats[format].colorSpace << std::endl;
+			Log << "	format	:		" << mSurfaceFormats[format].format << std::endl;
+			Log << "	Colour Space:	" << mSurfaceFormats[format].colorSpace << std::endl;
 		}
 
 	}
 
-	delete surfaceFormats;
 
 	uint32_t presentModeCount;
 	result = fpGetPhysicalDeviceSurfacePresentModesKHR(m_AvailablePhysicalDevices[0],
@@ -505,11 +544,11 @@ void MyEngine::DumpSurfaceInfoToFile()
 		&presentModeCount,
 		nullptr);
 
-	VkPresentModeKHR * presentModes = (VkPresentModeKHR*)malloc(sizeof(VkPresentModeKHR)*presentModeCount);
+	mPresentModes.resize(presentModeCount);
 	result = fpGetPhysicalDeviceSurfacePresentModesKHR(m_AvailablePhysicalDevices[0],
 		m_TheWindow->GetSurface(),
 		&presentModeCount,
-		presentModes);
+		mPresentModes.data());
 
 	if (result != VK_SUCCESS)
 	{
@@ -521,12 +560,10 @@ void MyEngine::DumpSurfaceInfoToFile()
 		{
 			Log << std::endl;
 			Log << "Device 0 Present modes:	" << std::endl;
-			Log << "	mode	:		" << presentModes[mode] << std::endl;
+			Log << "	mode	:		" << mPresentModes[mode] << std::endl;
 		}
 
 	}
-
-	delete presentModes;
 
 	Log.close();
 }

@@ -94,6 +94,8 @@ private:
 	std::vector<std::string>		m_EnabledInstanceLayers;
 
 	VkSurfaceCapabilitiesKHR		mSurfaceCapabilities;
+	std::vector<VkSurfaceFormatKHR>	mSurfaceFormats;
+	std::vector<VkPresentModeKHR>	mPresentModes;
 
 	VkInstance  TheVulkanInstance ;
 
