@@ -52,8 +52,6 @@ public:
 	void DoPhysicalDeviceStuff();
 	void SetUpDebugReportStuff();
 	void DestroyDebugReportStuff();
-	void GetSurfaceCapabilities();
-	void DumpSurfaceInfoToFile();
 	void CreateSwapchain();
 	void SpawnUpdateThread();
 	void Run();
@@ -93,9 +91,6 @@ private:
 	std::vector<std::string>		m_EnabledInstanceExtensions;
 	std::vector<std::string>		m_EnabledInstanceLayers;
 
-	VkSurfaceCapabilitiesKHR		mSurfaceCapabilities;
-	std::vector<VkSurfaceFormatKHR>	mSurfaceFormats;
-	std::vector<VkPresentModeKHR>	mPresentModes;
 
 	VkInstance  TheVulkanInstance ;
 

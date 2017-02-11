@@ -3,11 +3,14 @@
 
 #include "Vulkan/Vulkan.h"
 
+#include "WindowsWindow.h"
 
 #include <vector>
 #include <deque>
 #include <mutex>
 #include <memory>
+
+
 
 
 #ifdef _WIN32
@@ -52,8 +55,11 @@ typedef struct SyncedPresentable{
 class VulkanDevice
 {
 public:
-	VulkanDevice(VkPhysicalDevice);
+	VulkanDevice(VkPhysicalDevice, EngineWindow&);
 	~VulkanDevice();
+
+	void GetSurfaceCapabilities();
+	void DumpSurfaceInfoToFile();
 
 	VkDevice getVkDevice()
 	{
@@ -90,6 +96,10 @@ public:
 	bool GetFromPresentQueue(SyncedPresentable&);
 	void CreateInitialData();
 	void CreateRenderTargets(int, int);
+	void SetPresImage(VulkanImage * theImage)
+	{
+		mPresentationImage = theImage;
+	}
 
 	void Update();
 	void DoRender(uint32_t);
@@ -107,10 +117,18 @@ private:
 	void init();
 
 private:
-	VkDevice TheVulkanDevice;
-	VkPhysicalDevice mPhysicalDevice;
+	VkDevice			TheVulkanDevice;
+	VkPhysicalDevice	mPhysicalDevice;
+	EngineWindow&		mWindow;
+	
+	VkSurfaceCapabilitiesKHR		mSurfaceCapabilities;
+	std::vector<VkSurfaceFormatKHR>	mSurfaceFormats;
+	std::vector<VkPresentModeKHR>	mPresentModes;
+
 	VkQueue mQueue;
 	std::mutex mQueueLock;
+
+
 
 	VkDeviceQueueCreateInfo mQueueCreateInfo;
 	VkDeviceCreateInfo mCreateInfo;
@@ -130,6 +148,7 @@ private:
 	VulkanPipeline * mPipeline, *mPipeline2;
 	RenderInstance * mRenderInstance, *mRenderInstance2;
 
+	VulkanImage * mPresentationImage;
 
 
 	std::vector<VulkanImage>			mPresentableImageArray;

@@ -21,9 +21,11 @@
 
 #include <vector>
 
-VulkanDevice::VulkanDevice(VkPhysicalDevice thePhysicalDevice):
-mPhysicalDevice(thePhysicalDevice)
+VulkanDevice::VulkanDevice(VkPhysicalDevice thePhysicalDevice, EngineWindow& theWindow):
+mPhysicalDevice(thePhysicalDevice),
+mWindow(theWindow)
 {
+	GetSurfaceCapabilities();
 	VkDeviceQueueCreateInfo QueueCreateInfo;
 	memset(&QueueCreateInfo, 0, sizeof(QueueCreateInfo));
 
@@ -140,6 +142,169 @@ void VulkanDevice::GetDeviceExtensionPointers()
 	GET_DEVICE_PROC_ADDR(TheVulkanDevice, AcquireNextImageKHR);
 	GET_DEVICE_PROC_ADDR(TheVulkanDevice, QueuePresentKHR);
 
+}
+
+
+
+
+
+void VulkanDevice::GetSurfaceCapabilities()
+{
+#if ENGINE_LOGGING_ENABLED
+	DumpSurfaceInfoToFile();
+#else
+	VkBool32  PresentingSupported;
+	VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(m_AvailablePhysicalDevices[0], 0, m_TheWindow->GetSurface(), &PresentingSupported);
+
+	memset(&mSurfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
+
+	result = fpGetPhysicalDeviceSurfaceCapabilitiesKHR(m_AvailablePhysicalDevices[0],
+		m_TheWindow->GetSurface(),
+		&mSurfaceCapabilities);
+
+
+
+	uint32_t surfaceFormatCount;
+	result = fpGetPhysicalDeviceSurfaceFormatsKHR(m_AvailablePhysicalDevices[0],
+		m_TheWindow->GetSurface(),
+		&surfaceFormatCount,
+		nullptr);
+
+	mSurfaceFormats.resize(surfaceFormatCount);
+
+	result = fpGetPhysicalDeviceSurfaceFormatsKHR(m_AvailablePhysicalDevices[0],
+		m_TheWindow->GetSurface(),
+		&surfaceFormatCount,
+		mSurfaceFormats.data());
+
+
+	uint32_t presentModeCount;
+	result = fpGetPhysicalDeviceSurfacePresentModesKHR(m_AvailablePhysicalDevices[0],
+		m_TheWindow->GetSurface(),
+		&presentModeCount,
+		nullptr);
+
+	mPresentModes.resize(presentModeCount);
+	result = fpGetPhysicalDeviceSurfacePresentModesKHR(m_AvailablePhysicalDevices[0],
+		m_TheWindow->GetSurface(),
+		&presentModeCount,
+		mPresentModes.data());
+
+#endif
+}
+
+
+
+
+
+void VulkanDevice::DumpSurfaceInfoToFile()
+{
+	std::ofstream Log;
+	Log.open("SurfaceInfoLog.txt");
+
+	VkBool32  PresentingSupported;
+	VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(mPhysicalDevice, 0, mWindow.GetSurface(), &PresentingSupported);
+	if (result != VK_SUCCESS)
+		Log << "vkGetPhysicalDeviceSurfaceSupportKHR call failed!" << std::endl;
+	else if (PresentingSupported)
+		Log << "Presenting supported! Hooray!" << std::endl;
+	else
+		Log << "Presenting NOT supported! boo!" << std::endl;
+
+
+	memset(&mSurfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
+
+	result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mPhysicalDevice,
+		mWindow.GetSurface(),
+		&mSurfaceCapabilities);
+
+	if (result != VK_SUCCESS)
+	{
+		Log << "vkGetPhysicalDeviceSurfaceSupportKHR call failed!" << std::endl;
+	}
+	else
+	{
+		Log << "Device 0 Capabalities:" << std::endl;
+		Log << std::endl;
+		Log << "	uint32_t minImageCount: " << mSurfaceCapabilities.minImageCount << std::endl;
+		Log << "	uint32_t maxImageCount:	" << mSurfaceCapabilities.maxImageCount << std::endl;
+		Log << "	VkExtent2D currentExtent : " << std::endl;
+		Log << "		width: " << mSurfaceCapabilities.currentExtent.width << std::endl;
+		Log << "		height: " << mSurfaceCapabilities.currentExtent.height << std::endl;
+		Log << "	VkExtent2D minImageExtent : " << std::endl;
+		Log << "		width: " << mSurfaceCapabilities.minImageExtent.width << std::endl;
+		Log << "		height: " << mSurfaceCapabilities.minImageExtent.height << std::endl;
+		Log << "	VkExtent2D maxImageExtent : " << std::endl;
+		Log << "		width: " << mSurfaceCapabilities.maxImageExtent.width << std::endl;
+		Log << "		height: " << mSurfaceCapabilities.maxImageExtent.height << std::endl;
+		Log << "	uint32_t maxImageArrayLayers: " << mSurfaceCapabilities.maxImageArrayLayers << std::endl;
+
+
+		Log << "	VkSurfaceTransformFlagBitsKHR supportedTransforms: " << mSurfaceCapabilities.supportedTransforms << std::endl;
+		Log << "	VkSurfaceTransformFlagBitsKHR currentTransform: " << mSurfaceCapabilities.currentTransform << std::endl;
+		Log << "	VkCompositeAlphaFlagsKHR supportedCompositeAlpha: " << mSurfaceCapabilities.supportedCompositeAlpha << std::endl;
+		Log << "	VkImageUsageFlags supportedUsageFlags: " << mSurfaceCapabilities.supportedUsageFlags << std::endl;
+	}
+
+	uint32_t surfaceFormatCount;
+	result = vkGetPhysicalDeviceSurfaceFormatsKHR(mPhysicalDevice,
+		mWindow.GetSurface(),
+		&surfaceFormatCount,
+		nullptr);
+
+	mSurfaceFormats.resize(surfaceFormatCount);
+
+	result = vkGetPhysicalDeviceSurfaceFormatsKHR(mPhysicalDevice,
+		mWindow.GetSurface(),
+		&surfaceFormatCount,
+		mSurfaceFormats.data());
+
+
+	if (result != VK_SUCCESS)
+	{
+		Log << "vkGetPhysicalDeviceSurfaceFormatsKHR call failed!" << std::endl;
+	}
+	else
+	{
+		for (uint32_t format = 0; format < surfaceFormatCount; format++)
+		{
+			Log << std::endl;
+			Log << "Device 0 formats:	" << std::endl;
+			Log << "	format	:		" << mSurfaceFormats[format].format << std::endl;
+			Log << "	Colour Space:	" << mSurfaceFormats[format].colorSpace << std::endl;
+		}
+
+	}
+
+
+	uint32_t presentModeCount;
+	result = vkGetPhysicalDeviceSurfacePresentModesKHR(mPhysicalDevice,
+		mWindow.GetSurface(),
+		&presentModeCount,
+		nullptr);
+
+	mPresentModes.resize(presentModeCount);
+	result = vkGetPhysicalDeviceSurfacePresentModesKHR(mPhysicalDevice,
+		mWindow.GetSurface(),
+		&presentModeCount,
+		mPresentModes.data());
+
+	if (result != VK_SUCCESS)
+	{
+		Log << "vkGetPhysicalDeviceSurfacePresentModesKHR call failed!" << std::endl;
+	}
+	else
+	{
+		for (uint32_t mode = 0; mode < surfaceFormatCount; mode++)
+		{
+			Log << std::endl;
+			Log << "Device 0 Present modes:	" << std::endl;
+			Log << "	mode	:		" << mPresentModes[mode] << std::endl;
+		}
+
+	}
+
+	Log.close();
 }
 
 
@@ -279,6 +444,7 @@ void  VulkanDevice::CreateInitialData()
 	std::shared_ptr<VulkanBuffer> drawbuffer = VulkanBuffer::SetUpVertexBuffer(*this);
 	std::shared_ptr<VulkanBuffer> indexDrawbuffer = VulkanBuffer::SetUpVertexIndexBuffer(*this);
 	std::shared_ptr<VulkanBuffer> indexbuffer = VulkanBuffer::SetUpIndexBuffer(*this);
+
 
 	VertexDraw	theDraw(6, 1, 0, 0, drawbuffer);
 	IndexDraw	theIndexDraw(36, 1, 0, 0, 0, indexDrawbuffer, indexbuffer);
