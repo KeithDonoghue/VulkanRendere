@@ -44,7 +44,7 @@ private:
 #if ENGINE_LOGGING_ENABLED
 #define EngineLog(...) {	\
 	LoggingClass * Logger = LoggingClass::GetInstance();  \
-	Logger->Log(__VA_ARGS__);	\
+	Logger->Log(__VA_ARGS__, __FUNCTION__, __FILE__, __LINE__);	\
 	}
 #else
 #define EngineLog(...) do {} while(0);
