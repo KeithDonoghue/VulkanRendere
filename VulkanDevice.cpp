@@ -96,8 +96,8 @@ VulkanDevice::~VulkanDevice()
 	delete mVert;
 	delete mFrag;
 	delete mFrag2;
-	delete mPipeline;
-	delete mPipeline2;
+	mPipeline.reset();
+	mPipeline2.reset();
 
 
 	delete mImage;
@@ -433,8 +433,8 @@ void  VulkanDevice::CreateInitialData()
 	mVert = ShaderModule::CreateVertexShader(*this);
 	mFrag = ShaderModule::CreateFragmentShader(*this);
 	mFrag2 = ShaderModule::CreateFragmentShader2(*this);
-	mPipeline = new VulkanPipeline(*this, *mRenderPasses[0], *mVert, *mFrag);
-	mPipeline2 = new VulkanPipeline(*this, *mRenderPasses[0], *mVert, *mFrag2);
+	mPipeline = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], *mVert, *mFrag);
+	mPipeline2 = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], *mVert, *mFrag2);
 	mRenderInstance = std::make_shared<RenderInstance>(*this, *mPipeline, *mImage);
 	mRenderInstance2 = std::make_shared<RenderInstance>(*this, *mPipeline2, *mImage);
 

@@ -146,7 +146,7 @@ private:
 
 	ShaderModule * mVert;
 	ShaderModule * mFrag, *mFrag2;
-	VulkanPipeline * mPipeline, *mPipeline2;
+	std::shared_ptr<VulkanPipeline> mPipeline, mPipeline2;
 	std::shared_ptr<RenderInstance> mRenderInstance, mRenderInstance2;
 
 	VulkanImage * mPresentationImage;
