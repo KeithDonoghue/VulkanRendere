@@ -7,13 +7,20 @@
 class VulkanDevice;
 
 class RenderPass{
+
+	typedef enum RenderPasstate{
+		RenderPassOpen = 0,
+		RenderPassClosed = 1
+	}RenderPassState;
+
 public:
 	RenderPass(VulkanDevice &, VulkanImage&, VulkanImage&);
 	~RenderPass();
 	VulkanDevice & GetVulkanDevice(){ return mDevice; }
 	FrameBuffer & GetFrameBuffer() { return mFramebuffer; }
 	VkRenderPass GetVkRenderPass(){ return m_TheVulkanRenderPass; }
-	VkRenderPassBeginInfo Begin();
+	void Begin();
+	VkRenderPassBeginInfo getBeginInfo();
 	void End();
 
 private:
@@ -21,6 +28,8 @@ private:
 	VulkanDevice & mDevice;
 	FrameBuffer mFramebuffer;
 	VkRenderPass  m_TheVulkanRenderPass;
+	VkFence mReadyFence;
+	RenderPassState mCurrentState;
 
 	VulkanImage& mDepthImage;
 	VulkanImage& mColorImage;

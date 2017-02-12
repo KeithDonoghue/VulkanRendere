@@ -5,7 +5,8 @@
 #include "RenderPass.h"
 #include "VulkanDevice.h"
 #include "VulkanImage.h"
-
+#include "CommandPool.h"
+#include "CommandBuffer.h"
 
 
 
@@ -13,6 +14,7 @@ RenderPass::RenderPass(VulkanDevice & theDevice, VulkanImage& depthImage, Vulkan
 mDevice(theDevice),
 mDepthImage(depthImage),
 mColorImage(colorImage),
+mCurrentState(RenderPassState::RenderPassClosed),
 mFramebuffer(*this, colorImage.getWidth(), colorImage.getHeight() , 1)
 {
 
@@ -98,9 +100,29 @@ RenderPass::~RenderPass()
 
 
 
-VkRenderPassBeginInfo RenderPass::Begin()
+void RenderPass::Begin()
 {
+	if (mCurrentState != RenderPassState::RenderPassClosed)
+		return;
+
+	mCurrentState = RenderPassState::RenderPassOpen;
+
 	mDepthImage.ClearImage(1.0f);
+
+	VkRenderPassBeginInfo BeginInfo = getBeginInfo();
+
+	CommandBuffer * currentCommandBuffer = mDevice.GetCommandPool().GetCurrentCommandBuffer();
+	mReadyFence = currentCommandBuffer->GetCompletionFence();
+
+	vkCmdBeginRenderPass(currentCommandBuffer->GetVkCommandBuffer(), &BeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+
+
+
+
+VkRenderPassBeginInfo RenderPass::getBeginInfo()
+{
 	VkImageSubresourceRange subRange = {};
 
 	subRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -142,7 +164,7 @@ VkRenderPassBeginInfo RenderPass::Begin()
 	BeginInfo.renderArea = renderArea;
 	BeginInfo.clearValueCount = clearValues.size();
 	BeginInfo.pClearValues = clearValues.data();
-	
+
 	return BeginInfo;
 }
 
@@ -152,6 +174,15 @@ VkRenderPassBeginInfo RenderPass::Begin()
 
 void RenderPass::End()
 {
+
+	if (mCurrentState != RenderPassState::RenderPassOpen)
+		return;
+	mCurrentState = RenderPassState::RenderPassClosed;
+
+	CommandBuffer * currentCommandBuffer = mDevice.GetCommandPool().GetCurrentCommandBuffer();
+
+	vkCmdEndRenderPass(currentCommandBuffer->GetVkCommandBuffer());
+
 	mDepthImage.ClearImage(0.5f);
 }
 
