@@ -306,7 +306,7 @@ void VulkanImage::LoadDataToImage()
 
 	VkBufferImageCopy copyInfo = {};
 	copyInfo.bufferOffset = 0;
-	copyInfo.bufferRowLength = 500;
+	copyInfo.bufferRowLength = mWidth;
 	copyInfo.bufferImageHeight = 0;
 	copyInfo.imageSubresource = subLayers;
 	copyInfo.imageOffset = { 0, 0, 0 };
