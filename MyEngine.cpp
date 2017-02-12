@@ -156,11 +156,11 @@ void MyEngine::SelectPhysicalDevice()
 	int DeviceIndex = -1;
 	for (auto it : m_AvailablePhysicalDevices)
 	{
-		uint32_t PropertyCount, LayerCount;
+		uint32_t PropertyCount;
 		vkEnumerateDeviceExtensionProperties(it, NULL, &PropertyCount, NULL);
 		VkExtensionProperties * ExtensionProperties = (VkExtensionProperties*)malloc(PropertyCount*sizeof(VkExtensionProperties));
 		vkEnumerateDeviceExtensionProperties(it, NULL, &PropertyCount, ExtensionProperties);
-		for (int i = 0; i < PropertyCount; i++)
+		for (uint32_t i = 0; i < PropertyCount; i++)
 		{
 			char str[VK_MAX_EXTENSION_NAME_SIZE + 256];
 			sprintf_s(str, "Device Extension name: %s spec num: %d\n", ExtensionProperties[i].extensionName, ExtensionProperties[i].specVersion);
@@ -171,7 +171,7 @@ void MyEngine::SelectPhysicalDevice()
 		VkQueueFamilyProperties * FamilyProperties = (VkQueueFamilyProperties *)malloc(FamilyCount*sizeof(VkQueueFamilyProperties));
 		vkGetPhysicalDeviceQueueFamilyProperties(it, &FamilyCount, FamilyProperties);
 		OutputDebugString("Device\n");
-		for (int i = 0; i < FamilyCount; i++)
+		for (uint32_t i = 0; i < FamilyCount; i++)
 		{
 			OutputDebugString("Queue Family specs\n");
 			if (FamilyProperties[i].queueFlags && VK_QUEUE_COMPUTE_BIT)
@@ -232,7 +232,7 @@ void MyEngine::InitLayersAndExtensions()
 	theResult = vkEnumerateInstanceLayerProperties(&LayerCount, theProperties);
 	VulkanResultString(theResult);
 
-	for (int i = 0; i < LayerCount; i++)
+	for (uint32_t i = 0; i < LayerCount; i++)
 	{
 		m_AvailableLayerNames.push_back(theProperties[i].layerName);
 		sprintf_s(str, "Layer Number %d: %s\n", i, theProperties[i].layerName);
@@ -249,7 +249,7 @@ void MyEngine::InitLayersAndExtensions()
 		VkExtensionProperties * extensionProperties = (VkExtensionProperties*)malloc(extensionCount* sizeof(VkExtensionProperties));
 		theResult = vkEnumerateInstanceExtensionProperties(NULL, &extensionCount, extensionProperties);
 
-		for (int j = 0; j < extensionCount; j++)
+		for (uint32_t j = 0; j < extensionCount; j++)
 		{
 			m_AvailableExtensionNames.push_back(extensionProperties[j].extensionName);
 			char tempString[VK_MAX_EXTENSION_NAME_SIZE];
@@ -258,14 +258,14 @@ void MyEngine::InitLayersAndExtensions()
 		}
 	
 		OutputDebugString("Going through layer extensions.\n");
-		for (int i = 0; i < LayerCount; i++)
+		for (uint32_t i = 0; i < LayerCount; i++)
 		{
 			theResult = vkEnumerateInstanceExtensionProperties(theProperties[i].layerName , &extensionCount, NULL);
 			VkExtensionProperties * LayerExtensionProperties = (VkExtensionProperties*)malloc(extensionCount* sizeof(VkExtensionProperties));
 			theResult = vkEnumerateInstanceExtensionProperties(theProperties[i].layerName, &extensionCount, LayerExtensionProperties);
 			OutputDebugString(theProperties[i].layerName);
 			OutputDebugString(" ");
-			for (int j = 0; j < extensionCount; j++)
+			for (uint32_t j = 0; j < extensionCount; j++)
 			{
 				char tempString[VK_MAX_EXTENSION_NAME_SIZE];
 				sprintf_s(tempString, "Extension %d: %s\n", j, LayerExtensionProperties[j].extensionName);
@@ -353,7 +353,7 @@ void MyEngine::DoPhysicalDeviceStuff()
 		OutputDebugString(str);
 	}
 
-	for (int i = 0; i < DeviceCount; i++)
+	for (uint32_t i = 0; i < DeviceCount; i++)
 	{
 		m_AvailablePhysicalDevices.push_back(PhysicalDeviceList[i]);
 		VkPhysicalDeviceProperties DeviceProperties;
