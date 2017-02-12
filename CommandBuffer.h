@@ -29,11 +29,13 @@ public:
 	CommandBuffer(CommandPool&);
 	void Init();
 	void InitializeFence();
+	void InitializeSemaphore();
 	~CommandBuffer();
 	VkCommandBuffer GetVkCommandBuffer() { return m_TheVulkanCommandBuffer; }
 	VkCommandBuffer * GetVkCommandBufferAddr() { return &m_TheVulkanCommandBuffer; }
 
-	VkFence GetCompletionFence() { return mCompletionFence; }
+	const VkFence GetCompletionFence() const { return mCompletionFence; }
+	const VkSemaphore GetCompleteSignal() const { return mPendingSemaphore; }
 	CommandPool& GetPool() { return mPool; }
 	
 	
@@ -54,6 +56,8 @@ private:
 	CommandBufferState mCommandBufferState;
 	CommandPool& mPool;
 	VkFence mCompletionFence;
+	VkSemaphore mPendingSemaphore;
+
 
 	bool RenderPassCreated;
 	VulkanBuffer * DrawBuffer;

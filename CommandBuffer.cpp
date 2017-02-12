@@ -44,6 +44,7 @@ void CommandBuffer::Init()
 	}
 
 	InitializeFence();
+	InitializeSemaphore();
 }
 
 
@@ -65,6 +66,19 @@ void CommandBuffer::InitializeFence()
 		EngineLog("Failed to create Fence");
 	}
 }
+
+
+
+
+
+void CommandBuffer::InitializeSemaphore()
+{
+	VkSemaphoreCreateInfo SemCreateInfo = {};
+	SemCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	vkCreateSemaphore(mPool.GetVulkanDevice()->getVkDevice(), &SemCreateInfo, nullptr, &mPendingSemaphore);
+}
+
 
 
 
@@ -100,6 +114,7 @@ CommandBuffer::~CommandBuffer()
 	delete DrawBuffer;
 
 	vkDestroyFence(mPool.GetVulkanDevice()->getVkDevice(), mCompletionFence, nullptr);
+	vkDestroySemaphore(mPool.GetVulkanDevice()->getVkDevice(), mPendingSemaphore, nullptr);
 
 	vkFreeCommandBuffers(mPool.GetVulkanDevice()->getVkDevice(), mPool.GetVkCommandPool(), 1, &m_TheVulkanCommandBuffer);
 }
@@ -198,10 +213,8 @@ void CommandBuffer::StartDraw(RenderPass&  theRenderPass,
 {
 	static bool dirty = true;
 
-	VkRenderPassBeginInfo beginInfo = theRenderPass.Begin();
-
-	vkCmdBeginRenderPass(GetVkCommandBuffer(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdBindPipeline(GetVkCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, thePipeline.getVkPipeline());
+
 
 	if (dirty)
 	{
@@ -308,7 +321,5 @@ void CommandBuffer::Draw(IndexDraw theDraw)
 
 void CommandBuffer::EndDraw(RenderPass& theRenderPass, uint32_t primitiveCount)
 {
-	vkCmdEndRenderPass(GetVkCommandBuffer());
-
 	theRenderPass.End();
 }
