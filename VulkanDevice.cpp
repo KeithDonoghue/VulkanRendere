@@ -84,6 +84,9 @@ VulkanDevice::~VulkanDevice()
 {
 	vkDeviceWaitIdle(TheVulkanDevice);
 
+	mPipeline.reset();
+	mPipeline2.reset();
+
 	mRenderInstance.reset();
 	mRenderInstance2.reset();
 
@@ -96,8 +99,7 @@ VulkanDevice::~VulkanDevice()
 	delete mVert;
 	delete mFrag;
 	delete mFrag2;
-	mPipeline.reset();
-	mPipeline2.reset();
+
 
 
 	delete mImage;
@@ -435,8 +437,8 @@ void  VulkanDevice::CreateInitialData()
 	mFrag2 = ShaderModule::CreateFragmentShader2(*this);
 	mPipeline = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], *mVert, *mFrag);
 	mPipeline2 = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], *mVert, *mFrag2);
-	mRenderInstance = std::make_shared<RenderInstance>(*this, *mPipeline, *mImage);
-	mRenderInstance2 = std::make_shared<RenderInstance>(*this, *mPipeline2, *mImage);
+	mRenderInstance = std::make_shared<RenderInstance>(*this, mPipeline, *mImage);
+	mRenderInstance2 = std::make_shared<RenderInstance>(*this, mPipeline2, *mImage);
 
 	std::shared_ptr<VulkanBuffer> drawbuffer = VulkanBuffer::SetUpVertexBuffer(*this);
 	std::shared_ptr<VulkanBuffer> indexDrawbuffer = VulkanBuffer::SetUpVertexIndexBuffer(*this);
