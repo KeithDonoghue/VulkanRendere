@@ -1,5 +1,4 @@
 #include "MyEngine.h"
-
 #include "WindowsWindow.h"
 #include "Swapchain.h"
 #include "VulkanDevice.h"
@@ -13,6 +12,27 @@
 #include <iostream> 
 #include <fstream>
 #include <thread>
+
+
+
+
+// VK_KHR_surface function pointers
+
+PFN_vkGetPhysicalDeviceSurfaceSupportKHR
+fpGetPhysicalDeviceSurfaceSupportKHR;
+PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
+fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
+PFN_vkGetPhysicalDeviceSurfaceFormatsKHR
+fpGetPhysicalDeviceSurfaceFormatsKHR;
+PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
+fpGetPhysicalDeviceSurfacePresentModesKHR;
+
+
+// EXT_debug_report function pointers
+
+PFN_vkCreateDebugReportCallbackEXT	fpCreateDebugReportCallback;
+PFN_vkDebugReportMessageEXT			fpDebugReportMessage;
+PFN_vkDestroyDebugReportCallbackEXT	fpDestroyDebugReportCallback;
 
 
 // MS-Windows event handling function:
@@ -303,7 +323,7 @@ void MyEngine::CreateVulkanInstance()
 	*/
 	
 
-#if _DEBUG
+#if ENGINE_LOGGING_ENABLED
 	UsingLayers.push_back("VK_LAYER_LUNARG_api_dump");
 	UsingLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 #endif
@@ -356,13 +376,12 @@ void MyEngine::DoPhysicalDeviceStuff()
 	for (uint32_t i = 0; i < DeviceCount; i++)
 	{
 		m_AvailablePhysicalDevices.push_back(PhysicalDeviceList[i]);
-		VkPhysicalDeviceProperties DeviceProperties;
-		vkGetPhysicalDeviceProperties(PhysicalDeviceList[i], &DeviceProperties);
+		vkGetPhysicalDeviceProperties(PhysicalDeviceList[i], &mDeviceProperties);
 		char str[256];
-		uint32_t version = DeviceProperties.apiVersion;
+		uint32_t version = mDeviceProperties.apiVersion;
 		sprintf_s(str, "Version Major: %d Version minor: %d\n Device Type: %d \n Driver Version: %d\nDevice Name: %s\n", 
-			VK_VERSION_MAJOR(version), VK_VERSION_MINOR(version), DeviceProperties.deviceType, DeviceProperties.driverVersion,
-			DeviceProperties.deviceName);
+			VK_VERSION_MAJOR(version), VK_VERSION_MINOR(version), mDeviceProperties.deviceType, mDeviceProperties.driverVersion,
+			mDeviceProperties.deviceName);
 		OutputDebugString(str);
 
 	}

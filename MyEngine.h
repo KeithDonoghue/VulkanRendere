@@ -36,6 +36,8 @@ class VulkanDevice;
 	    }
 
 
+
+
 class MyEngine{
 public:
 	MyEngine();
@@ -92,23 +94,7 @@ private:
 	VkInstance  TheVulkanInstance ;
 
 	std::vector<VkPhysicalDevice>		m_AvailablePhysicalDevices;
-
-	// EXT_debug_report function pointers
-
-	PFN_vkCreateDebugReportCallbackEXT	fpCreateDebugReportCallback;
-	PFN_vkDebugReportMessageEXT			fpDebugReportMessage;
-	PFN_vkDestroyDebugReportCallbackEXT	fpDestroyDebugReportCallback;
-
-	// VK_KHR_surface function pointers
-
-	PFN_vkGetPhysicalDeviceSurfaceSupportKHR
-		fpGetPhysicalDeviceSurfaceSupportKHR;
-	PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR
-		fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
-	PFN_vkGetPhysicalDeviceSurfaceFormatsKHR
-		fpGetPhysicalDeviceSurfaceFormatsKHR;
-	PFN_vkGetPhysicalDeviceSurfacePresentModesKHR
-		fpGetPhysicalDeviceSurfacePresentModesKHR;
+	VkPhysicalDeviceProperties			mDeviceProperties;
 
 
 	VkDebugReportCallbackEXT m_callback;
