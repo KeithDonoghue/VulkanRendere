@@ -186,6 +186,76 @@ void CommandBuffer::EndCommandBuffer()
 
 
 
+const VkSemaphore CommandBuffer::GetCompleteSignal() 
+{ 
+	mSignalSems.push_back(mPendingSemaphore);
+	return mPendingSemaphore; 
+}
+
+
+
+
+
+void CommandBuffer::AddWaitSignal(VkSemaphore newSemWait)
+{
+	mWaitSems.push_back(newSemWait);
+	mWaitStageFlags.push_back(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+}
+
+
+
+
+
+void CommandBuffer::AddWaitSignal(VkSemaphore newSemWait, VkPipelineStageFlagBits stageFlags)
+{
+	mWaitSems.push_back(newSemWait);
+	mWaitStageFlags.push_back(stageFlags);
+}
+
+
+
+
+
+void CommandBuffer::AddFinishSignal(VkSemaphore newSemSignal)
+{
+	mSignalSems.push_back(newSemSignal);
+}
+
+
+
+
+
+void CommandBuffer::SubmitCommandBuffer()
+{
+	VkSubmitInfo theSubmitInfo = {};
+
+	theSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	theSubmitInfo.pNext = nullptr;
+	theSubmitInfo.waitSemaphoreCount = mWaitSems.size();
+	theSubmitInfo.pWaitSemaphores = mWaitSems.data();
+	theSubmitInfo.pWaitDstStageMask = mWaitStageFlags.data();
+	theSubmitInfo.commandBufferCount = 1;
+	theSubmitInfo.pCommandBuffers = GetVkCommandBufferAddr();
+	theSubmitInfo.signalSemaphoreCount = mSignalSems.size();
+	theSubmitInfo.pSignalSemaphores = mSignalSems.data();
+
+	EndCommandBuffer();
+
+	mPool.GetVulkanDevice()->LockQueue();
+	VkResult result = vkQueueSubmit(mPool.GetVulkanDevice()->GetVkQueue(), 1, &theSubmitInfo, GetCompletionFence());
+	mPool.GetVulkanDevice()->UnlockQueue();
+
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Queue submission failed.");
+	}
+
+	mWaitSems.clear();
+	mSignalSems.clear();
+}
+
+
+
 
 void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
 {

@@ -35,14 +35,19 @@ public:
 	VkCommandBuffer * GetVkCommandBufferAddr() { return &m_TheVulkanCommandBuffer; }
 
 	const VkFence GetCompletionFence() const { return mCompletionFence; }
-	const VkSemaphore GetCompleteSignal() const { return mPendingSemaphore; }
+	const VkSemaphore GetCompleteSignal(); 
 	CommandPool& GetPool() { return mPool; }
 	
 	
+	void AddWaitSignal(VkSemaphore);
+	void AddWaitSignal(VkSemaphore, VkPipelineStageFlagBits);
+	void AddFinishSignal(VkSemaphore);
+
 	void GetImageReadyForPresenting(VulkanImage&);
 	bool IsComplete();
 	void BeginCommandBuffer();
 	void EndCommandBuffer();
+	void SubmitCommandBuffer();
 
 	void SetUpMVP(VulkanPipeline&, glm::mat4&);
 	void SetInstanceData(VulkanPipeline&, glm::mat4 *, uint32_t, uint32_t);
@@ -55,6 +60,10 @@ private:
 	VkCommandBuffer m_TheVulkanCommandBuffer;
 	CommandBufferState mCommandBufferState;
 	CommandPool& mPool;
+
+	std::vector<VkSemaphore> mWaitSems;
+	std::vector<VkPipelineStageFlags> mWaitStageFlags;
+	std::vector<VkSemaphore> mSignalSems;
 	VkFence mCompletionFence;
 	VkSemaphore mPendingSemaphore;
 

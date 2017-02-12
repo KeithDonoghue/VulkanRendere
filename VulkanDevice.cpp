@@ -472,74 +472,35 @@ void VulkanDevice::Update()
 
 	uint32_t nextImage = nextPresentable.mEngineImageIndex;
 
+
+	// Render Work
 	mColourImages[nextImage]->ClearImage(1.0f);
 	mColourImages[nextImage]->BlitFullImage(*mImage);
 	
 	DoRender(nextImage);
 
-
+	// Finished render work, do boilerplate
 	VkSemaphore pendingSignal = currentCommandBuffer->GetCompleteSignal();
-	VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-
-	VkSubmitInfo theSubmitInfo;
-	memset(&theSubmitInfo, 0, sizeof(VkSubmitInfo));
-	theSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	theSubmitInfo.pNext = nullptr;
-	theSubmitInfo.waitSemaphoreCount = 0;
-	theSubmitInfo.pWaitSemaphores = 0;
-	theSubmitInfo.pWaitDstStageMask = &stageFlags;
-	theSubmitInfo.commandBufferCount = 1;
-	theSubmitInfo.pCommandBuffers = currentCommandBuffer->GetVkCommandBufferAddr();
-	theSubmitInfo.signalSemaphoreCount = 1;
-	theSubmitInfo.pSignalSemaphores = &pendingSignal;
-
-	currentCommandBuffer->EndCommandBuffer();
-
-	LockQueue();
-	VkResult  result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, currentCommandBuffer->GetCompletionFence());
-	UnlockQueue();
-
+	currentCommandBuffer->SubmitCommandBuffer();
 	mCommandPool->NextCmdBuffer();
 
 
+	// Blit to presentable Image.
 	currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
 
 	mPresentableImageArray[nextImage].BlitFullImage(*mColourImages[nextImage]);
 	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
 
-	
-	std::vector<VkSemaphore> waitSems;
-	waitSems.push_back(nextPresentable.mWaitForAcquireSemaphore);
-	waitSems.push_back(pendingSignal);
+	// Add semaphores that blit to backbuffer needs to wait for.
+	currentCommandBuffer->AddWaitSignal(pendingSignal);
+	currentCommandBuffer->AddWaitSignal(nextPresentable.mWaitForAcquireSemaphore);
 
+	currentCommandBuffer->AddFinishSignal(nextPresentable.mWaitForPresentSemaphore);
 
-	std::vector<VkPipelineStageFlags> stageFlags2;
-	stageFlags2.push_back(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-	stageFlags2.push_back(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-
-	memset(&theSubmitInfo, 0, sizeof(VkSubmitInfo));
-	theSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	theSubmitInfo.pNext = nullptr;
-	theSubmitInfo.waitSemaphoreCount = waitSems.size();
-	theSubmitInfo.pWaitSemaphores = waitSems.data();
-	theSubmitInfo.pWaitDstStageMask = stageFlags2.data();
-	theSubmitInfo.commandBufferCount = 1;
-	theSubmitInfo.pCommandBuffers = currentCommandBuffer->GetVkCommandBufferAddr();
-	theSubmitInfo.signalSemaphoreCount = 1;
-	theSubmitInfo.pSignalSemaphores = &nextPresentable.mWaitForPresentSemaphore;
-
-	currentCommandBuffer->EndCommandBuffer();
-
-	LockQueue();
-	result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, currentCommandBuffer->GetCompletionFence());
-	UnlockQueue();
-
+	// Submit Blit
+	currentCommandBuffer->SubmitCommandBuffer();
 	mCommandPool->NextCmdBuffer();
 
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Queue submission failed.");
-	}
 
 	AddToPresentQueue(nextPresentable);
 }
