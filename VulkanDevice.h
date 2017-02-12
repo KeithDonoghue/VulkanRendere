@@ -81,6 +81,11 @@ public:
 	{
 		return mQueue;
 	}
+	
+	VkQueue GetVkPresentQueue()
+	{
+		return mPresentQueue;
+	}
 
 	CommandPool& GetCommandPool() { return *mCommandPool; }
 	DescriptorPool& GetDescriptorPool() { return *mDescriptorPool; }
@@ -113,6 +118,8 @@ public:
 	void LockQueue()	{ mQueueLock.lock() ; }
 	void UnlockQueue()	{ mQueueLock.unlock() ; }
 
+	void LockPresentQueue()	{ mPresentQueueLock.lock(); }
+	void UnlockPresentQueue()	{ mPresentQueueLock.unlock(); }
 
 private:
 	void init();
@@ -129,7 +136,8 @@ private:
 	VkQueue mQueue;
 	std::mutex mQueueLock;
 
-
+	VkQueue mPresentQueue;
+	std::mutex mPresentQueueLock;
 
 	VkDeviceQueueCreateInfo mQueueCreateInfo;
 	VkDeviceCreateInfo mCreateInfo;

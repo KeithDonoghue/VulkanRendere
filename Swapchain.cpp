@@ -1,3 +1,10 @@
+#define VULKAN_FRAMERATE_LOGGER 0
+
+#if VULKAN_FRAMERATE_LOGGER  
+#define ENGINE_LOGGING_ENABLED 1
+#include "EngineLogging.h"
+#endif
+
 #include "Swapchain.h"
 
 #include "Windows.h"
@@ -20,7 +27,7 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow & theWindow):
 	mCreateInfo.pNext				= nullptr;
 	//mCreateInfo.flags				= 0; reserved for future use.
 	mCreateInfo.surface				= NULL; // assigned in init.
-	mCreateInfo.minImageCount		= 4;
+	mCreateInfo.minImageCount		= 8;
 	mCreateInfo.imageFormat			= VK_FORMAT_B8G8R8A8_UNORM;
 	mCreateInfo.imageColorSpace		= VK_COLORSPACE_SRGB_NONLINEAR_KHR;
 	mCreateInfo.imageExtent			= theWindow.GetExtent();
@@ -127,7 +134,7 @@ void Swapchain::GetImages()
 	SemaphoreCreateInfo.pNext = nullptr;
 	SemaphoreCreateInfo.flags = 0; //reserved for future use.
 
-	for (int i = 0; i < mNumSemaphores; i++)
+	for (uint32_t i = 0; i < mNumSemaphores; i++)
 	{
 		VkSemaphore tempSemaphore;
 		result = vkCreateSemaphore(mDevice->getVkDevice(), &SemaphoreCreateInfo, nullptr, &tempSemaphore);
@@ -151,8 +158,9 @@ void Swapchain::Update()
 {
 	SyncedPresentable nextFreePresentable;
 
+
 	// Only attempt to acquire an image if were not holding them all.
-	if (mSwapchainImageCount - mMinImageCount + 1 > mImagesHeld)
+	while(mSwapchainImageCount - mMinImageCount + 1 > mImagesHeld)
 	{
 		nextFreePresentable.mWaitForAcquireSemaphore = mSemaphoreQueue.front();
 		mSemaphoreQueue.pop_front();
@@ -160,14 +168,14 @@ void Swapchain::Update()
 		nextFreePresentable.mWaitForPresentSemaphore = mSemaphoreQueue.front();
 		mSemaphoreQueue.pop_front();
 
-		mDevice->LockQueue();
+		mDevice->LockPresentQueue();
 		VkResult result = vkAcquireNextImageKHR(mDevice->getVkDevice(),
 			theVulkanSwapchain,
 			UINT64_MAX,
 			nextFreePresentable.mWaitForAcquireSemaphore,
 			VK_NULL_HANDLE,
 			&nextFreePresentable.mEngineImageIndex);
-		mDevice->UnlockQueue();
+		mDevice->UnlockPresentQueue();
 
 		if (result != VK_SUCCESS)
 		{
@@ -197,9 +205,9 @@ void Swapchain::Update()
 		thePresentInfo.pSwapchains = &theVulkanSwapchain;
 		thePresentInfo.pImageIndices = &nextFreePresentable.mEngineImageIndex;
 
-		mDevice->LockQueue();
-		VkResult result = vkQueuePresentKHR(mDevice->GetVkQueue(), &thePresentInfo);
-		mDevice->UnlockQueue();
+		mDevice->LockPresentQueue();
+		VkResult result = vkQueuePresentKHR(mDevice->GetVkPresentQueue(), &thePresentInfo);
+		mDevice->UnlockPresentQueue();
 
 		mImagesHeld--;
 
@@ -212,9 +220,6 @@ void Swapchain::Update()
 		mSemaphoreQueue.push_back(nextFreePresentable.mWaitForAcquireSemaphore);
 		mSemaphoreQueue.push_back(nextFreePresentable.mWaitForPresentSemaphore);
 
-
-
-#define VULKAN_FRAMERATE_LOGGER 1
 #if VULKAN_FRAMERATE_LOGGER
 		static int frames = 0;
 		static std::chrono::time_point<std::chrono::high_resolution_clock> mPrevP =

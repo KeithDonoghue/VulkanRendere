@@ -17,14 +17,14 @@ mMemProperties{}
 	mLog << std::endl;
 	mLog << "heaps: " << std::endl;
 
-	for (int i = 0; i < mMemProperties.memoryHeapCount; i++)
+	for (uint32_t i = 0; i < mMemProperties.memoryHeapCount; i++)
 	{
 		mLog << "Heap " << i << ": " <<  std::endl;
 		mLog << "	flags: " << mMemProperties.memoryHeaps[i].flags << std::endl;
 		mLog << "	size: " << mMemProperties.memoryHeaps[i].size << std::endl;
 	}
 
-	for (int i = 0; i < mMemProperties.memoryTypeCount; i++)
+	for (uint32_t i = 0; i < mMemProperties.memoryTypeCount; i++)
 	{
 		mLog << "Heap " << i << ": " << std::endl;
 		mLog << "	flags: " << mMemProperties.memoryTypes[i].propertyFlags << std::endl;

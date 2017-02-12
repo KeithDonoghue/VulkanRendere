@@ -22,18 +22,16 @@ mPhysicalDevice(thePhysicalDevice),
 mWindow(theWindow)
 {
 	CheckSurfaceCapabilities();
-	VkDeviceQueueCreateInfo QueueCreateInfo;
-	memset(&QueueCreateInfo, 0, sizeof(QueueCreateInfo));
 
-	float queuePriorities= 1.0f;
+	float queuePriorities[2] = { 1.0f, 1.0f };
 
+	VkDeviceQueueCreateInfo QueueCreateInfo = {};
 	QueueCreateInfo.pNext = NULL;
 	QueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	//QueueCreateInfo.flags; Reserved For future use
+	QueueCreateInfo.flags = 0; // Reserved For future use
 	QueueCreateInfo.queueFamilyIndex = 0;
-	QueueCreateInfo.queueCount = 1;
-	QueueCreateInfo.pQueuePriorities = &queuePriorities;
-
+	QueueCreateInfo.queueCount = 2;
+	QueueCreateInfo.pQueuePriorities = queuePriorities;
 
 
 
@@ -41,8 +39,7 @@ mWindow(theWindow)
 	DeviceExtensionsToEnable.push_back("VK_KHR_swapchain");
 
 
-	VkDeviceCreateInfo DeviceCreateInfo;
-	memset(&DeviceCreateInfo, 0, sizeof(DeviceCreateInfo));
+	VkDeviceCreateInfo DeviceCreateInfo = {};
 
 	DeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	DeviceCreateInfo.pNext = NULL;
@@ -69,6 +66,7 @@ mWindow(theWindow)
 
 
 	vkGetDeviceQueue(TheVulkanDevice, 0, 0, &mQueue);
+	vkGetDeviceQueue(TheVulkanDevice, 0, 1, &mPresentQueue);
 	CreateCommandPool();
 	CreateMemoryManager();
 	CreateDescriptorPool();
