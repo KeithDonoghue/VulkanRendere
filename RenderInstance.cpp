@@ -85,11 +85,16 @@ RenderInstance::~RenderInstance()
 
 void RenderInstance::Draw(RenderPass& theRenderPass)
 {
+
+	theRenderPass.Begin();
+
+
 	CommandBuffer * currentCommandBuffer = mDevice.GetCommandPool().GetCurrentCommandBuffer();
 	currentCommandBuffer->StartDraw(theRenderPass, *mPipeline, mImage, mSampler, mView);
 	UpdateMVP();
 	currentCommandBuffer->Draw(mIndexDraw);
 	currentCommandBuffer->EndDraw(theRenderPass, mNumPrimitivesToRender);
+
 }
 
 
