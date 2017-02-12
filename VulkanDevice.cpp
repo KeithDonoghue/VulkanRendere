@@ -84,8 +84,8 @@ VulkanDevice::~VulkanDevice()
 {
 	vkDeviceWaitIdle(TheVulkanDevice);
 
-	delete mRenderInstance;
-	delete mRenderInstance2;
+	mRenderInstance.reset();
+	mRenderInstance2.reset();
 
 	for (size_t i = 0; i < mDepthImages.size(); i++)
 	{
@@ -435,8 +435,8 @@ void  VulkanDevice::CreateInitialData()
 	mFrag2 = ShaderModule::CreateFragmentShader2(*this);
 	mPipeline = new VulkanPipeline(*this, *mRenderPasses[0], *mVert, *mFrag);
 	mPipeline2 = new VulkanPipeline(*this, *mRenderPasses[0], *mVert, *mFrag2);
-	mRenderInstance = new RenderInstance(*this, *mPipeline, *mImage);
-	mRenderInstance2 = new RenderInstance(*this, *mPipeline2, *mImage);
+	mRenderInstance = std::make_shared<RenderInstance>(*this, *mPipeline, *mImage);
+	mRenderInstance2 = std::make_shared<RenderInstance>(*this, *mPipeline2, *mImage);
 
 	std::shared_ptr<VulkanBuffer> drawbuffer = VulkanBuffer::SetUpVertexBuffer(*this);
 	std::shared_ptr<VulkanBuffer> indexDrawbuffer = VulkanBuffer::SetUpVertexIndexBuffer(*this);
