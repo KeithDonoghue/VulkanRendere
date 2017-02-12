@@ -89,6 +89,7 @@ public:
 	}
 
 	void UpdateMVP();
+	void UpdateRelModelMat();
 private:
 	VulkanImage & mImage;
 	std::shared_ptr<VulkanPipeline> mPipeline;

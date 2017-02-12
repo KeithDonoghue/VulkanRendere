@@ -90,11 +90,12 @@ void RenderInstance::Draw(RenderPass& theRenderPass)
 
 
 	CommandBuffer * currentCommandBuffer = mDevice.GetCommandPool().GetCurrentCommandBuffer();
-	currentCommandBuffer->StartDraw(theRenderPass, *mPipeline, mImage, mSampler, mView);
+	currentCommandBuffer->SetDrawState(theRenderPass, *mPipeline, mImage, mSampler, mView);
 	UpdateMVP();
+	UpdateRelModelMat();
 	currentCommandBuffer->Draw(mIndexDraw);
-	currentCommandBuffer->EndDraw(theRenderPass, mNumPrimitivesToRender);
 
+	theRenderPass.End();
 }
 
 
@@ -147,4 +148,18 @@ void RenderInstance::UpdateMVP()
 		currentCommandBuffer->SetUpMVP(*mPipeline, MVP);
 
 	}
+}
+
+
+
+
+// Try to do this in as data orieted a way as possible.
+void RenderInstance::UpdateRelModelMat()
+{
+	std::vector<glm::mat4> InstanceData(2);
+	InstanceData[0] = glm::mat4();
+	InstanceData[1] = glm::translate(InstanceData[0], glm::vec3(1.0, 0.0f, 0.0f));
+
+	CommandBuffer * currentCommandBuffer = mDevice.GetCommandPool().GetCurrentCommandBuffer();
+	currentCommandBuffer->SetInstanceData(*mPipeline, InstanceData.data(), 80, 128);
 }

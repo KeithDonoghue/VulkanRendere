@@ -45,10 +45,10 @@ public:
 	void EndCommandBuffer();
 
 	void SetUpMVP(VulkanPipeline&, glm::mat4&);
-	void StartDraw(RenderPass&, VulkanPipeline&, VulkanImage&, VkSampler, VkImageView);
+	void SetInstanceData(VulkanPipeline&, glm::mat4 *, uint32_t, uint32_t);
+	void SetDrawState(RenderPass&, VulkanPipeline&, VulkanImage&, VkSampler, VkImageView);
 	void Draw(VertexDraw);
 	void Draw(IndexDraw);
-	void EndDraw(RenderPass&, uint32_t);
 
 private:
 	VkCommandBufferAllocateInfo mAllocateInfo;
