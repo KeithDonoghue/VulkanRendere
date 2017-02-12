@@ -2,7 +2,6 @@
 #include "VulkanImage.h"
 #include "VulkanBuffer.h"
 #include "VulkanMemoryManager.h"
-
 #include "DescriptorPool.h"
 #include "CommandPool.h"
 #include "CommandBuffer.h"
@@ -11,12 +10,12 @@
 #include "VulkanPipeline.h"
 #include "RenderInstance.h"
 
-
-
-
 #include "Windows.h"
 
 #include <vector>
+
+
+
 
 VulkanDevice::VulkanDevice(VkPhysicalDevice thePhysicalDevice, EngineWindow& theWindow):
 mPhysicalDevice(thePhysicalDevice),
@@ -417,7 +416,8 @@ void  VulkanDevice::CreateRenderTargets(int width, int height)
 	for (size_t i = 0; i < mPresentableImageArray.size(); i++)
 	{
 		mDepthImages.emplace_back(new VulkanImage(this, width, height, ImageType::VULKAN_IMAGE_DEPTH));
-		mRenderPasses.emplace_back(new RenderPass(*this, *mDepthImages[i], mPresentableImageArray[i]));
+		mColourImages.emplace_back(new VulkanImage(this, width, height, ImageType::VULKAN_IMAGE_COLOR_RGBA8));
+		mRenderPasses.emplace_back(new RenderPass(*this, *mDepthImages[i], *mColourImages[i]));
 	}
 }
 
@@ -473,24 +473,59 @@ void VulkanDevice::Update()
 
 	uint32_t nextImage = nextPresentable.mEngineImageIndex;
 
-
-	mPresentableImageArray[nextImage].ClearImage(1.0f);
-	mPresentableImageArray[nextImage].BlitFullImage(*mImage);
+	mColourImages[nextImage]->ClearImage(1.0f);
+	mColourImages[nextImage]->BlitFullImage(*mImage);
 	
 	DoRender(nextImage);
 
-	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
 
-
+	VkSemaphore pendingSignal = currentCommandBuffer->GetCompleteSignal();
 	VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
 	VkSubmitInfo theSubmitInfo;
 	memset(&theSubmitInfo, 0, sizeof(VkSubmitInfo));
 	theSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	theSubmitInfo.pNext = nullptr;
-	theSubmitInfo.waitSemaphoreCount = 1;
-	theSubmitInfo.pWaitSemaphores = &nextPresentable.mWaitForAcquireSemaphore;
+	theSubmitInfo.waitSemaphoreCount = 0;
+	theSubmitInfo.pWaitSemaphores = 0;
 	theSubmitInfo.pWaitDstStageMask = &stageFlags;
+	theSubmitInfo.commandBufferCount = 1;
+	theSubmitInfo.pCommandBuffers = currentCommandBuffer->GetVkCommandBufferAddr();
+	theSubmitInfo.signalSemaphoreCount = 1;
+	theSubmitInfo.pSignalSemaphores = &pendingSignal;
+
+	currentCommandBuffer->EndCommandBuffer();
+
+	LockQueue();
+	VkResult  result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, currentCommandBuffer->GetCompletionFence());
+	UnlockQueue();
+
+	mCommandPool->NextCmdBuffer();
+
+
+	currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
+
+
+	mPresentableImageArray[nextImage].BlitFullImage(*mColourImages[nextImage]);
+
+	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
+
+	
+	std::vector<VkSemaphore> waitSems;
+	waitSems.push_back(nextPresentable.mWaitForAcquireSemaphore);
+	waitSems.push_back(pendingSignal);
+
+
+	std::vector<VkPipelineStageFlags> stageFlags2;
+	stageFlags2.push_back(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+	stageFlags2.push_back(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+
+	memset(&theSubmitInfo, 0, sizeof(VkSubmitInfo));
+	theSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	theSubmitInfo.pNext = nullptr;
+	theSubmitInfo.waitSemaphoreCount = waitSems.size();
+	theSubmitInfo.pWaitSemaphores = waitSems.data();
+	theSubmitInfo.pWaitDstStageMask = stageFlags2.data();
 	theSubmitInfo.commandBufferCount = 1;
 	theSubmitInfo.pCommandBuffers = currentCommandBuffer->GetVkCommandBufferAddr();
 	theSubmitInfo.signalSemaphoreCount = 1;
@@ -499,7 +534,7 @@ void VulkanDevice::Update()
 	currentCommandBuffer->EndCommandBuffer();
 
 	LockQueue();
-	VkResult  result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, currentCommandBuffer->GetCompletionFence());
+	result = vkQueueSubmit(GetVkQueue(), 1, &theSubmitInfo, currentCommandBuffer->GetCompletionFence());
 	UnlockQueue();
 
 	mCommandPool->NextCmdBuffer();

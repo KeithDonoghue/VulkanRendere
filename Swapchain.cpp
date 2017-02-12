@@ -25,7 +25,7 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow & theWindow):
 	mCreateInfo.imageColorSpace		= VK_COLORSPACE_SRGB_NONLINEAR_KHR;
 	mCreateInfo.imageExtent			= theWindow.GetExtent();
 	mCreateInfo.imageArrayLayers	= 1;
-	mCreateInfo.imageUsage			= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	mCreateInfo.imageUsage			= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	mCreateInfo.imageSharingMode	= VK_SHARING_MODE_EXCLUSIVE;
 	//mCreateInfo.queueFamilyIndexCount 
 	//mCreateInfo.pQueueFamilyIndices

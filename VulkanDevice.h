@@ -137,6 +137,7 @@ private:
 	VulkanImage * mImage;
 
 	std::vector<VulkanImage*> mDepthImages;
+	std::vector<VulkanImage*> mColourImages;
 	std::vector<RenderPass*> mRenderPasses;
 
 	std::unique_ptr<DescriptorPool> mDescriptorPool;
