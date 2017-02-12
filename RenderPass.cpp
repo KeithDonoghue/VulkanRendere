@@ -1,9 +1,13 @@
+#ifndef RENDER_PASS_HPP
+#define RENDER_PASS_HPP 1
+
+#include "ApiUsageHeader.h"
 #include "RenderPass.h"
 #include "VulkanDevice.h"
 #include "VulkanImage.h"
 
-#define ENGINE_LOGGING_ENABLED 1
-#include "EngineLogging.h"
+
+
 
 RenderPass::RenderPass(VulkanDevice & theDevice, VulkanImage& depthImage, VulkanImage& colorImage):
 mDevice(theDevice),
@@ -150,3 +154,5 @@ void RenderPass::End()
 {
 	mDepthImage.ClearImage(0.5f);
 }
+
+#endif // RENDER_PASS_HPP

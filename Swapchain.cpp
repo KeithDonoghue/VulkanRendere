@@ -1,10 +1,5 @@
 #include "Swapchain.h"
 
-
-#define ENGINE_LOGGING_ENABLED 1 
-#include "EngineLogging.h"
-
-
 #include "Windows.h"
 
 
@@ -14,11 +9,11 @@ Swapchain::Swapchain(VulkanDevice * theDevice, EngineWindow & theWindow):
 	mDevice(theDevice),
 	mWindow(theWindow),
 	mNumSemaphores(0),
-	mMinImageCount(1),
+	mMinImageCount(0),
 	mImagesHeld(0)
 { 
-
-
+	VkSurfaceCapabilitiesKHR surfaceCaps = mDevice->GetSurfaceCapabilities();
+	mMinImageCount = surfaceCaps.minImageCount;
 
 	memset(&mCreateInfo, 0, sizeof(mCreateInfo));
 	mCreateInfo.sType				= VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -155,8 +150,6 @@ void Swapchain::GetImages()
 void Swapchain::Update()
 {
 	SyncedPresentable nextFreePresentable;
-	uint32_t presentIndex;
-
 
 	// Only attempt to acquire an image if were not holding them all.
 	if (mSwapchainImageCount - mMinImageCount + 1 > mImagesHeld)

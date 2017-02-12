@@ -31,7 +31,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Mine.DoPhysicalDeviceStuff();
 	Mine.SelectPhysicalDevice();
 	Mine.CreateDevice();
-	Mine.GetSurfaceCapabilities();
 	Mine.CreateSwapchain();
 
 	Mine.SpawnUpdateThread();

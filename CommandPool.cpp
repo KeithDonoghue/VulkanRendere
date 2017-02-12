@@ -1,11 +1,7 @@
 #include "CommandPool.h"
 #include "CommandBuffer.h"
-
-#define ENGINE_LOGGING_ENABLED 1 
-#include "EngineLogging.h"
 #include "VulkanDevice.h"
 
-#include <Vulkan/vulkan.h>
 
 #include <cstring>
 

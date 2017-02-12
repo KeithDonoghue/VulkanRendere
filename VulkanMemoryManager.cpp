@@ -1,8 +1,6 @@
 #include "VulkanMemoryManager.h"
 #include "VulkanDevice.h"
 
-#define ENGINE_LOGGING_ENABLE 1 
-#include "EngineLogging.h"
 
 
 VulkanMemMngr::VulkanMemMngr(VulkanDevice * theDevice):	

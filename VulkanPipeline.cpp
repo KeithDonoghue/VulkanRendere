@@ -4,7 +4,6 @@
 #include "ShaderModule.h"
 #include "DescriptorPool.h"
 
-#include "EngineLogging.h"
 
 
 
@@ -214,10 +213,10 @@ VkPipelineRasterizationStateCreateInfo * VulkanPipeline::CreateRasterisationStat
 	RScreateInfo->polygonMode = VK_POLYGON_MODE_FILL;
 	RScreateInfo->cullMode = VK_CULL_MODE_NONE;
 	RScreateInfo->frontFace = VK_FRONT_FACE_CLOCKWISE;
-	RScreateInfo->depthClampEnable = VK_FALSE;
+	RScreateInfo->depthClampEnable = VK_TRUE;
 	RScreateInfo->rasterizerDiscardEnable = VK_FALSE;
 	RScreateInfo->depthBiasEnable = VK_FALSE;
-	RScreateInfo->lineWidth = 5.0f;
+	RScreateInfo->lineWidth = 1.0f;
 
 	return RScreateInfo;
 }
@@ -253,7 +252,7 @@ void VulkanPipeline::CreatePipelineLayout(RenderPass& theRenderPass, ShaderModul
 
 	mDescSet = mDevice.GetDescriptorPool().AllocateDescriptorSet(mSetLayout);
 
-	VkPushConstantRange pushRange[3] = {};
+	VkPushConstantRange pushRange[4] = {};
 	pushRange[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	pushRange[0].offset = 0;
 	pushRange[0].size = 16;
@@ -266,13 +265,17 @@ void VulkanPipeline::CreatePipelineLayout(RenderPass& theRenderPass, ShaderModul
 	pushRange[2].offset = 80;
 	pushRange[2].size = 64;
 
+	pushRange[3].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushRange[3].offset = 144;
+	pushRange[3].size = 64;
+
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutCreateInfo.pNext = nullptr;
 	pipelineLayoutCreateInfo.flags = 0; // reserved for fuiture use.
 	pipelineLayoutCreateInfo.setLayoutCount = 1;
 	pipelineLayoutCreateInfo.pSetLayouts = &mSetLayout;
-	pipelineLayoutCreateInfo.pushConstantRangeCount = 3;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = 4;
 	pipelineLayoutCreateInfo.pPushConstantRanges = pushRange;
 
 

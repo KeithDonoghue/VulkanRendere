@@ -1,6 +1,7 @@
-#include "vulkan/vulkan.h"
-#include "ApiUsageHeader.h"
+#ifndef SWAPCHAIN_HPP
+#define SWAPCHAIN_HPP 1
 
+#include "ApiUsageHeader.h"
 #include "VulkanDevice.h"
 #include "WindowsWindow.h"
 
@@ -34,3 +35,4 @@ private:
 
 	uint32_t mImagesHeld;
 };
+#endif // SWAPCHAIN_HPP

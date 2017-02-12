@@ -1,8 +1,7 @@
 #ifndef FRAMEBUFFER_HDR
 #define FRAMEBUFFER_HDR
 
-#include "vulkan/vulkan.h"
-
+#include "ApiUsageHeader.h"
 
 #include <vector>
 

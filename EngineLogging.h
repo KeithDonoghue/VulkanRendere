@@ -37,8 +37,15 @@ private:
 	std::ofstream mLogFile;
 };
 
+// Flip Here to toggle on in Release or off in Debug regardless of per file changes
+//#define ENGINE_LOGGING_ENABLED 1
 
 
+#ifndef ENGINE_LOGGING_ENABLED
+// FLip in here to maintain per file defines.
+#define ENGINE_LOGGING_ENABLED _DEBUG
+//#define ENGINE_LOGGING_ENABLED 1
+#endif
 
 
 #if ENGINE_LOGGING_ENABLED

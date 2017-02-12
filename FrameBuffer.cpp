@@ -2,7 +2,6 @@
 #include "RenderPass.h"
 #include "VulkanImage.h"
 
-#include "EngineLogging.h"
 
 
 FrameBuffer::FrameBuffer(RenderPass & theRenderPass,

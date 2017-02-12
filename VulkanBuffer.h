@@ -1,7 +1,10 @@
-#include "vulkan/vulkan.h"
-#include <memory>
+#ifndef VULKAN_BUFFER_HPP 
+#define VULKAN_BUFFER_HPP 1
 
+#include "ApiUsageHeader.h"
 #include "VulkanMemoryManager.h"
+
+#include <memory>
 
 
 class VulkanDevice;
@@ -15,6 +18,8 @@ public:
 	void BindMemory(bool mappable = true);
 	void LoadBufferData(const void *, uint32_t size);
 	void CopyFullBuffer(VulkanBuffer&);
+	void DoTheImportThing(const std::string& pFile);
+
 
 	static std::shared_ptr<VulkanBuffer> CreateStagingBuffer(VulkanDevice&, size_t);
 	static std::shared_ptr<VulkanBuffer> CreateVertexBuffer(VulkanDevice&, size_t);
@@ -38,3 +43,4 @@ private:
 	uint32_t mNumPrimitives;
 	bool mHostVisible;
 };
+#endif // VULKAN_BUFFER_HPP 

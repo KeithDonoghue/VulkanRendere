@@ -1,9 +1,7 @@
 #ifndef VULKAN_MEM_MNGR_HDR
 #define VULKAN_MEM_MNGR_HDR 1
 
-
-#include "vulkan/vulkan.h"
-
+#include "ApiUsageHeader.h"
 #include "VulkanDevice.h"
 
 #include <fstream>

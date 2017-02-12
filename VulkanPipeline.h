@@ -1,4 +1,8 @@
-#include "vulkan/vulkan.h"
+#ifndef VULKAN_PIPELINE_HPP 
+#define VULKAN_PIPELINE_HPP 1
+
+#include "ApiUsageHeader.h"
+
 
 class VulkanDevice;
 class ShaderModule;
@@ -27,3 +31,4 @@ private:
 	VkPipelineLayout mPipelineLayout;
 	VulkanDevice & mDevice;
 };
+#endif // VULKAN_PIPELINE_HPP 

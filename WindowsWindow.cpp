@@ -1,13 +1,13 @@
 #include "WindowsWindow.h"
 #include "MyEngine.h"
+#include "Swapchain.h"
+
+
 #ifndef _MSC_VER
 #define _ISOC11_SOURCE /* for aligned_alloc() */
 #endif
 
 
-#define ENGINE_LOGGING_ENABLED 1
-#include "Swapchain.h"
-#include "EngineLogging.h"
 
 
 EngineWindow::EngineWindow(MyEngine & theEngine, int x, int y, int width, int height):

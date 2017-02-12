@@ -1,14 +1,8 @@
 #include "VulkanImage.h"
 #include "VulkanDevice.h"
-
 #include "CommandPool.h"
 #include "CommandBuffer.h"
 #include "VulkanBuffer.h"
-
-#include "vulkan/vulkan.h"
-
-#define ENGINE_LOGGING_ENABLED 1 
-#include "EngineLogging.h"
 
 
 #include "ImageLoader.h"

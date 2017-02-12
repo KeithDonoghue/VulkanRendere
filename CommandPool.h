@@ -1,7 +1,7 @@
 #ifndef COMMAND_POOL_HDR
 #define COMMAND_POOL_HDR 1
 
-#include <Vulkan/vulkan.h>
+#include "ApiUsageHeader.h"
 
 #include <deque>
 #include <stack>

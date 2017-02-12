@@ -16,16 +16,13 @@
 
 #include "Windows.h"
 
-#define  ENGINE_LOGGING_ENABLED 1
-#include "EngineLogging.h"
-
 #include <vector>
 
 VulkanDevice::VulkanDevice(VkPhysicalDevice thePhysicalDevice, EngineWindow& theWindow):
 mPhysicalDevice(thePhysicalDevice),
 mWindow(theWindow)
 {
-	GetSurfaceCapabilities();
+	CheckSurfaceCapabilities();
 	VkDeviceQueueCreateInfo QueueCreateInfo;
 	memset(&QueueCreateInfo, 0, sizeof(QueueCreateInfo));
 
@@ -148,45 +145,45 @@ void VulkanDevice::GetDeviceExtensionPointers()
 
 
 
-void VulkanDevice::GetSurfaceCapabilities()
+void VulkanDevice::CheckSurfaceCapabilities()
 {
 #if ENGINE_LOGGING_ENABLED
 	DumpSurfaceInfoToFile();
 #else
 	VkBool32  PresentingSupported;
-	VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(m_AvailablePhysicalDevices[0], 0, m_TheWindow->GetSurface(), &PresentingSupported);
+	VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(mPhysicalDevice, 0, mWindow.GetSurface(), &PresentingSupported);
 
 	memset(&mSurfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
 
-	result = fpGetPhysicalDeviceSurfaceCapabilitiesKHR(m_AvailablePhysicalDevices[0],
-		m_TheWindow->GetSurface(),
+	result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mPhysicalDevice,
+		mWindow.GetSurface(),
 		&mSurfaceCapabilities);
 
 
 
 	uint32_t surfaceFormatCount;
-	result = fpGetPhysicalDeviceSurfaceFormatsKHR(m_AvailablePhysicalDevices[0],
-		m_TheWindow->GetSurface(),
+	result = vkGetPhysicalDeviceSurfaceFormatsKHR(mPhysicalDevice,
+		mWindow.GetSurface(),
 		&surfaceFormatCount,
 		nullptr);
 
 	mSurfaceFormats.resize(surfaceFormatCount);
 
-	result = fpGetPhysicalDeviceSurfaceFormatsKHR(m_AvailablePhysicalDevices[0],
-		m_TheWindow->GetSurface(),
+	result = vkGetPhysicalDeviceSurfaceFormatsKHR(mPhysicalDevice,
+		mWindow.GetSurface(),
 		&surfaceFormatCount,
 		mSurfaceFormats.data());
 
 
 	uint32_t presentModeCount;
-	result = fpGetPhysicalDeviceSurfacePresentModesKHR(m_AvailablePhysicalDevices[0],
-		m_TheWindow->GetSurface(),
+	result = vkGetPhysicalDeviceSurfacePresentModesKHR(mPhysicalDevice,
+		mWindow.GetSurface(),
 		&presentModeCount,
 		nullptr);
 
 	mPresentModes.resize(presentModeCount);
-	result = fpGetPhysicalDeviceSurfacePresentModesKHR(m_AvailablePhysicalDevices[0],
-		m_TheWindow->GetSurface(),
+	result = vkGetPhysicalDeviceSurfacePresentModesKHR(mPhysicalDevice,
+		mWindow.GetSurface(),
 		&presentModeCount,
 		mPresentModes.data());
 
@@ -445,9 +442,11 @@ void  VulkanDevice::CreateInitialData()
 	std::shared_ptr<VulkanBuffer> indexDrawbuffer = VulkanBuffer::SetUpVertexIndexBuffer(*this);
 	std::shared_ptr<VulkanBuffer> indexbuffer = VulkanBuffer::SetUpIndexBuffer(*this);
 
+	indexbuffer->DoTheImportThing("Resources/cube.dae");
+
 
 	VertexDraw	theDraw(6, 1, 0, 0, drawbuffer);
-	IndexDraw	theIndexDraw(36, 1, 0, 0, 0, indexDrawbuffer, indexbuffer);
+	IndexDraw	theIndexDraw(36, 2, 0, 0, 0, indexDrawbuffer, indexbuffer);
 
 	mRenderInstance->SetDraw(theDraw);
 	mRenderInstance2->SetDraw(theDraw);

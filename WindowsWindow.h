@@ -1,11 +1,11 @@
 #ifndef WINDOWS_WINDOW_H
 #define WINDOWS_WINDOW_H 1
 
+#include "ApiUsageHeader.h"
+
 #include <Windows.h>
-#define VK_USE_PLATFORM_WIN32_KHR 1
 #pragma comment(linker, "/subsystem:windows")
 
-#include <vulkan/vulkan.h>
 #include <string>
 #include <atomic>
 

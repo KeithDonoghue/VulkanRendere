@@ -1,7 +1,6 @@
 #include "ShaderModule.h"
 
 #include "VulkanDevice.h"
-#include "EngineLogging.h"
 
 #include <fstream>
 #include <string>

@@ -1,7 +1,8 @@
 #ifndef SHADER_MODULE_HDR
 #define SHADER_MODULE_HDR 1
 
-#include "vulkan/vulkan.h"
+#include "ApiUsageHeader.h"
+
 #include <string>
 
 

@@ -1,7 +1,8 @@
 #ifndef COMMAND_BUFFER_HDR
 #define COMMAND_BUFFER_HDR 1 
 
-#include "vulkan/vulkan.h"
+#include "ApiUsageHeader.h"
+
 #include "RenderInstance.h"
 
 #include <glm/mat4x4.hpp> // glm::mat4

@@ -1,7 +1,7 @@
 #ifndef VULKAN_DEVICE_H
 #define VULKAN_DEVICE_H 1
 
-#include "Vulkan/Vulkan.h"
+#include "ApiUsageHeader.h"
 
 #include "WindowsWindow.h"
 
@@ -58,7 +58,8 @@ public:
 	VulkanDevice(VkPhysicalDevice, EngineWindow&);
 	~VulkanDevice();
 
-	void GetSurfaceCapabilities();
+	void CheckSurfaceCapabilities();
+	const VkSurfaceCapabilitiesKHR GetSurfaceCapabilities() const { return mSurfaceCapabilities;  }
 	void DumpSurfaceInfoToFile();
 
 	VkDevice getVkDevice()

@@ -1,10 +1,7 @@
 #ifndef MY_ENGINE_HDR 
 #define MY_ENGINE_HDR 1
 
-
-#define VK_USE_PLATFORM_WIN32_KHR 1
-
-#include <vulkan/vulkan.h>
+#include "ApiUsageHeader.h"
 
 #include "Windows.h"
 

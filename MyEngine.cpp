@@ -1,10 +1,4 @@
 #include "MyEngine.h"
-#include "ApiUsageHeader.h"
-#define VK_USE_PLATFORM_WIN32_KHR 1
-
-#define ENGINE_LOGGING_ENABLED 1
-#include "EngineLogging.h"
-
 
 #include "WindowsWindow.h"
 #include "Swapchain.h"

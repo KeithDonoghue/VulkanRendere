@@ -1,7 +1,7 @@
 #ifndef RENDER_PASS_HDR
 #define RENDER_PASS_HDR
 
-#include "vulkan/vulkan.h"
+#include "ApiUsageHeader.h"
 #include "Framebuffer.h"
 
 class VulkanDevice;

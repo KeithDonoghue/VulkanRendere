@@ -6,9 +6,6 @@
 #include "RenderPass.h"
 #include "VulkanPipeline.h"
 
-#define ENGINE_LOGGING_ENABLED 1
-#include "EngineLogging.h"
-
 #include <cstring>
 
 #include <glm/vec3.hpp> // glm::vec3
@@ -259,11 +256,14 @@ void CommandBuffer::SetUpMVP(VulkanPipeline& thePipeline, glm::mat4 & MVP)
 	//correction = glm::inverse(correction);
 
 	glm::mat4 correction = glm::mat4();
+	glm::mat4 correction1 = glm::translate(correction, glm::vec3(1.0, 0.0f, 0.0f));
 
 
-		vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT , 0, sizeof(colour), colour);
-		vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 16, 64, &MVP[0]);
-		vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 80, 64, &correction[0]);
+		
+	vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT , 0, sizeof(colour), colour);
+	vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 16, 64, &MVP[0]);
+	vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 80, 64, &correction[0]);	
+	vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 144, 64, &correction1[0]);
 
 }
 

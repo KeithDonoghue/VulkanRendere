@@ -1,8 +1,7 @@
 #ifndef VULKAN_IMAGE_HDR
 #define VULKAN_IMAGE_HDR 1
 
-#include "vulkan/vulkan.h"
-
+#include "ApiUsageHeader.h"
 #include "VulkanMemoryManager.h"
 
 #include <vector>
@@ -10,6 +9,8 @@
 
 class VulkanDevice;
 class VulkanBuffer;
+
+
 
 typedef enum ImageType
 {
