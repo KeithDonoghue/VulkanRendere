@@ -92,6 +92,7 @@ VulkanDevice::~VulkanDevice()
 	for (size_t i = 0; i < mDepthImages.size(); i++)
 	{
 		delete mDepthImages[i];
+		delete mColourImages[i];
 		delete mRenderPasses[i];
 	}
 
@@ -505,9 +506,7 @@ void VulkanDevice::Update()
 
 	currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
 
-
 	mPresentableImageArray[nextImage].BlitFullImage(*mColourImages[nextImage]);
-
 	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
 
 	
