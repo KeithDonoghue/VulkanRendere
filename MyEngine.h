@@ -16,25 +16,17 @@ class EngineWindow;
 class Swapchain;
 class VulkanDevice;
 
-#ifdef _WIN32
-#define ERR_EXIT(err_msg, err_class)                                           \
-    do {                                                                       \
-            MessageBox(NULL, err_msg, err_class, MB_OK);                       \
-        exit(1);                                                               \
-		    } while (0)
-#endif
 
 #define GET_INSTANCE_PROC_ADDR(inst, entrypoint)                               \
 	    {                                                                          \
-        fp##entrypoint =                                                 \
+        vk##entrypoint =                                                 \
             (PFN_vk##entrypoint)vkGetInstanceProcAddr(inst, "vk" #entrypoint); \
-			if(fp##entrypoint == NULL)		\
+			if(vk##entrypoint == NULL)		\
 			{\
 			ERR_EXIT("vkGetInstanceProcAddr failed to find vk" #entrypoint,    \
                      "vkGetInstanceProcAddr Failure");                         \
 			}\
 	    }
-
 
 
 
