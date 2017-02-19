@@ -13,7 +13,7 @@
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
 
-RenderInstance::RenderInstance(VulkanDevice&  theDevice, std::shared_ptr<VulkanPipeline> thePipeline, VulkanImage& theImage):
+RenderInstance::RenderInstance(VulkanDevice&  theDevice, std::shared_ptr<VulkanPipeline> thePipeline, VulkanImage * theImage):
 mPipeline(thePipeline),
 mImage(theImage),
 mDevice(theDevice),
@@ -47,26 +47,6 @@ posDirty(true)
 	{
 		EngineLog("Failed to create Sampler");
 	}
-
-	VkImageViewCreateInfo view = {};
-	view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	view.pNext = NULL;
-	view.image = mImage.getVkImage();
-	view.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	view.format = mImage.GetFormat();
-	view.components =
-	{
-		VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G,
-		VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A,
-	};
-	view.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-	view.flags = 0;
-
-	result = vkCreateImageView(mDevice.getVkDevice(), &view, nullptr, &mView);
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Failed to create Sampler");
-	}
 }
 
 
@@ -76,7 +56,6 @@ posDirty(true)
 RenderInstance::~RenderInstance()
 {
 	vkDestroySampler(mDevice.getVkDevice(), mSampler, nullptr);
-	vkDestroyImageView(mDevice.getVkDevice(), mView, nullptr);
 }
 
 
@@ -90,7 +69,7 @@ void RenderInstance::Draw(RenderPass& theRenderPass)
 
 
 	CommandBuffer * currentCommandBuffer = mDevice.GetCommandPool().GetCurrentCommandBuffer();
-	currentCommandBuffer->SetDrawState(theRenderPass, *mPipeline, mImage, mSampler, mView);
+	currentCommandBuffer->SetDrawState(theRenderPass, *mPipeline, *mImage, mSampler);
 	UpdateMVP();
 	UpdateRelModelMat();
 	currentCommandBuffer->Draw(mIndexDraw);

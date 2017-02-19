@@ -278,8 +278,7 @@ void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
 void CommandBuffer::SetDrawState(RenderPass&  theRenderPass,
 	VulkanPipeline& thePipeline,
 	VulkanImage& theImage,
-	VkSampler theSampler,
-	VkImageView theView)
+	VkSampler theSampler)
 {
 	static bool dirty = true;
 
@@ -292,7 +291,7 @@ void CommandBuffer::SetDrawState(RenderPass&  theRenderPass,
 		VkDescriptorImageInfo imageInfo = {};
 
 		imageInfo.imageLayout = theImage.GetLayout();
-		imageInfo.imageView = theView;
+		imageInfo.imageView = theImage.CreateStandardView();
 		imageInfo.sampler = theSampler;
 
 

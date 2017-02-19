@@ -74,12 +74,13 @@ typedef struct IndexDraw{
 
 class RenderInstance{
 public:
-	RenderInstance(VulkanDevice&, std::shared_ptr<VulkanPipeline>, VulkanImage&);
+	RenderInstance(VulkanDevice&, std::shared_ptr<VulkanPipeline>, VulkanImage*);
 	~RenderInstance();
 	void Draw(RenderPass&);
 	void SetDrawBuffer(std::shared_ptr<VulkanBuffer>, uint32_t);
 	void SetDraw(VertexDraw);
 	void SetDraw(IndexDraw);
+	void setSampleImage(VulkanImage * newImage){ mImage = newImage; }
 
 	void ChangeWorldPosition(float deltaZ, float deltaX, float deltaR){
 		mZPosition += deltaZ;
@@ -91,11 +92,10 @@ public:
 	void UpdateMVP();
 	void UpdateRelModelMat();
 private:
-	VulkanImage & mImage;
+	VulkanImage * mImage;
 	std::shared_ptr<VulkanPipeline> mPipeline;
 	VulkanDevice & mDevice;
 	VkSampler mSampler;
-	VkImageView mView;
 
 	std::shared_ptr<VulkanBuffer> mDrawBuffer;
 	uint32_t mNumPrimitivesToRender;
