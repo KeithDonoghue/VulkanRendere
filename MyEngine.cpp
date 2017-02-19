@@ -196,21 +196,6 @@ PFN_vkCmdEndRenderPass vkCmdEndRenderPass;
 MyEngine::MyEngine() :name("TheEngine"),
 mFinish(false)
 {
-
-	HMODULE VulkanLoader = LoadLibrary("vulkan-1-1-0-30-0.dll");
-
-	vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(VulkanLoader, "vkGetInstanceProcAddr");
-
-	vkEnumerateInstanceLayerProperties = (PFN_vkEnumerateInstanceLayerProperties)
-		GetProcAddress(VulkanLoader, "vkEnumerateInstanceLayerProperties");
-
-	vkEnumerateInstanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties) 
-		GetProcAddress(VulkanLoader, "vkEnumerateInstanceExtensionProperties");
-
-	vkCreateInstance = (PFN_vkCreateInstance)
-		GetProcAddress(VulkanLoader, "vkCreateInstance");
-
-
 	mLogFile.open("DebugReportLogs/" + name +"Log.txt");
 	mLoaderLogFile.open("DebugReportLogs/" + name + "LoaderLog.txt");
 	mMemLogFile.open("DebugReportLogs/" + name + "MemoryLog.txt");
@@ -219,8 +204,6 @@ mFinish(false)
 
 	mInformationLogFile.open("DebugReportLogs/" + name + "InformationLog.txt");
 	mInformationLogFile << "Creating" << std::endl;
-
-
 }
 
 
@@ -246,6 +229,26 @@ MyEngine::~MyEngine()
 	mInformationLogFile.close();
 	mErrorLogFile.close();
 	mPerfLogFile.close();
+}
+
+
+
+
+
+void MyEngine::InitLoader()
+{
+	HMODULE VulkanLoader = LoadLibrary("vulkan-1-1-0-30-0.dll");
+
+	vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(VulkanLoader, "vkGetInstanceProcAddr");
+
+	vkEnumerateInstanceLayerProperties = (PFN_vkEnumerateInstanceLayerProperties)
+		GetProcAddress(VulkanLoader, "vkEnumerateInstanceLayerProperties");
+
+	vkEnumerateInstanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)
+		GetProcAddress(VulkanLoader, "vkEnumerateInstanceExtensionProperties");
+
+	vkCreateInstance = (PFN_vkCreateInstance)
+		GetProcAddress(VulkanLoader, "vkCreateInstance");
 }
 
 

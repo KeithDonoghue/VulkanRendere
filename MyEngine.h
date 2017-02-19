@@ -34,6 +34,7 @@ class MyEngine{
 public:
 	MyEngine();
 	~MyEngine();
+	void InitLoader();
 	void InitLayersAndExtensions();
 	void SetWindowOffsetAndSize(int, int, int, int);
 	void CreateVulkanInstance();
