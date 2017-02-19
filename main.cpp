@@ -20,10 +20,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 
 
-	Mine.SetWindowOffsetAndSize(200, 50, 600, 600);
+	Mine.InitLoader();
 	Mine.InitLayersAndExtensions();
 	Mine.CreateVulkanInstance();
 	Mine.GetInstanceExtensionPointers();
+
+	Mine.SetWindowOffsetAndSize(200, 50, 600, 600);
+;
 
 	Mine.SetUpDebugReportStuff();
 	Mine.CreateGameWindow(hInstance);
