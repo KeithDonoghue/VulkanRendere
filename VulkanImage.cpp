@@ -19,7 +19,8 @@ m_TheVulkanImage(theImage),
 mSystemManaged(systemManaged),
 mType(VULKAN_IMAGE_COLOR_RGBA8),
 mWidth(width),
-mHeight(height)
+mHeight(height),
+mCreatedStandardView(false)
 {}
 
 
@@ -32,7 +33,8 @@ mExtent{},
 mWidth(width),
 mHeight(height),
 mDevice(theDevice),
-mType(type)
+mType(type),
+mCreatedStandardView(false)
 {
 	Init();
 }
@@ -43,7 +45,8 @@ mType(type)
 
 VulkanImage::VulkanImage(VulkanDevice * theDevice, std::string filename):
 mDevice(theDevice),
-mType(ImageType::VULKAN_IMAGE_COLOR_RGBA8)
+mType(ImageType::VULKAN_IMAGE_COLOR_RGBA8),
+mCreatedStandardView(false)
 {
 	int x, y, n;
 	unsigned char * data = stbi_load(filename.c_str(), &x, &y, &n, 4);
@@ -115,12 +118,48 @@ void VulkanImage::Init()
 
 VulkanImage::~VulkanImage()
 {
+	if (mCreatedStandardView)
+		vkDestroyImageView(mDevice->getVkDevice(), mStandardView, nullptr);
+
 	if (!mSystemManaged)
 	{
 		vkQueueWaitIdle(mDevice->GetVkQueue());
 		mDevice->GetMemManager().FreeAllocation(mAllocStruct);
 		vkDestroyImage(mDevice->getVkDevice(), m_TheVulkanImage, nullptr);
 	}
+}
+
+
+
+
+VkImageView VulkanImage::CreateStandardView()
+{
+	if (mCreatedStandardView)
+		return mStandardView;
+
+	mCreatedStandardView = true;
+
+	VkImageViewCreateInfo viewCreateInfo = {};
+	viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewCreateInfo.pNext = NULL;
+	viewCreateInfo.image = getVkImage();
+	viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewCreateInfo.format = GetFormat();
+	viewCreateInfo.components =
+	{
+		VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G,
+		VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A,
+	};
+	viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+	viewCreateInfo.flags = 0;
+
+	VkResult result = vkCreateImageView(mDevice->getVkDevice(), &viewCreateInfo, nullptr, &mStandardView);
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to create Sampler");
+	}
+
+	return mStandardView;
 }
 
 

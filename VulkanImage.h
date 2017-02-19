@@ -30,13 +30,15 @@ public:
 	VulkanImage(VulkanDevice*, int width, int heigh, ImageType);
 	void Init();
 	~VulkanImage();
-	VkImage GetVkImage() { return m_TheVulkanImage; }
-	VkImage getVkImage() { return m_TheVulkanImage; }
-	VkImageLayout GetLayout() { return mCurrentLayout; }
-	VkFormat GetFormatForType(ImageType);
-	VkFormat GetFormat();
-	VkImageUsageFlags GetUsageForType(ImageType);
-	VkAccessFlags	GetAccessFlags(VkImageLayout);
+	VkImage				GetVkImage() { return m_TheVulkanImage; }
+	VkImage				getVkImage() { return m_TheVulkanImage; }
+	VkImageLayout		GetLayout() { return mCurrentLayout; }
+	VkFormat			GetFormatForType(ImageType);
+	VkFormat			GetFormat();
+	VkImageUsageFlags	GetUsageForType(ImageType);
+	VkAccessFlags		GetAccessFlags(VkImageLayout);
+	VkImageView			CreateStandardView();
+
 	void TransitionToClearable(VkImageSubresourceRange&);
 	void TransToRecieveBlit();
 	void BlittingFrom();
@@ -69,6 +71,10 @@ private: // Private members.
 	VkImageCreateInfo mCreateInfo;
 	VkImageLayout mCurrentLayout;
 	VkExtent3D mExtent;
+
+	bool		mCreatedStandardView;
+	VkImageView mStandardView;
+
 
 	ImageType mType;
 	uint32_t mWidth, mHeight;
