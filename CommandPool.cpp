@@ -58,8 +58,10 @@ void CommandPool::CreateCommandBuffer()
 
 
 
-void CommandPool::NextCmdBuffer()
+CommandBuffer * CommandPool::NextCmdBuffer()
 {
+	mCurrentCommandBuffer->SubmitCommandBuffer();
+
 	mPendingList.push_back(mCurrentCommandBuffer);
 
 	bool deleted = true;
@@ -88,4 +90,5 @@ void CommandPool::NextCmdBuffer()
 		mCurrentCommandBuffer = new CommandBuffer(mDevice->GetCommandPool());
 	}
 
+	return mCurrentCommandBuffer;
 }

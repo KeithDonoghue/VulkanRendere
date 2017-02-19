@@ -20,7 +20,7 @@ public:
 	VkCommandPool GetVkCommandPool() { return m_TheVulkanCommandPool; }
 	VulkanDevice * GetVulkanDevice() { return mDevice; }
 	CommandBuffer * GetCurrentCommandBuffer() { return mCurrentCommandBuffer; }
-	void NextCmdBuffer();
+	CommandBuffer * NextCmdBuffer();
 
 private:
 	VkCommandPoolCreateInfo mCreateInfo;
