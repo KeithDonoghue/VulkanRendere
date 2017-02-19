@@ -871,7 +871,9 @@ void MyEngine::Run()
 
 void MyEngine::Update()
 {	
-	mVulkanDevice->Update();
+	mVulkanDevice->BeginFrame();
+	mVulkanDevice->DoRendering();
+	mVulkanDevice->Present();
 }
 
 

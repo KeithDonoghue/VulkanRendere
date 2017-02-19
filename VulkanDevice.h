@@ -107,8 +107,9 @@ public:
 		mPresentationImage = theImage;
 	}
 
-	void Update();
-	void DoRender(uint32_t);
+	void BeginFrame();
+	void Present();
+	void DoRendering();
 	void TakeInput(unsigned int);
 
 
@@ -159,6 +160,9 @@ private:
 	std::shared_ptr<RenderInstance> mRenderInstance, mRenderInstance2;
 
 	VulkanImage * mPresentationImage;
+	uint32_t mNextImage;
+	SyncedPresentable mNextPresentable;
+
 
 
 	std::vector<VulkanImage>			mPresentableImageArray;

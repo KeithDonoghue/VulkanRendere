@@ -101,7 +101,7 @@ VulkanDevice::~VulkanDevice()
 
 
 	delete mImage;
-	
+
 	mCommandPool.reset();
 	mMemoryManager.reset();
 	mDescriptorPool.reset();
@@ -436,8 +436,8 @@ void  VulkanDevice::CreateInitialData()
 	mFrag2 = ShaderModule::CreateFragmentShader2(*this);
 	mPipeline = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], *mVert, *mFrag);
 	mPipeline2 = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], *mVert, *mFrag2);
-	mRenderInstance = std::make_shared<RenderInstance>(*this, mPipeline, *mImage);
-	mRenderInstance2 = std::make_shared<RenderInstance>(*this, mPipeline2, *mImage);
+	mRenderInstance = std::make_shared<RenderInstance>(*this, mPipeline, mImage);
+	mRenderInstance2 = std::make_shared<RenderInstance>(*this, mPipeline2, mImage);
 
 	std::shared_ptr<VulkanBuffer> drawbuffer = VulkanBuffer::SetUpVertexBuffer(*this);
 	std::shared_ptr<VulkanBuffer> indexDrawbuffer = VulkanBuffer::SetUpVertexIndexBuffer(*this);
@@ -460,49 +460,62 @@ void  VulkanDevice::CreateInitialData()
 
 
 
-void VulkanDevice::Update()
+void VulkanDevice::DoRendering()
 {
+	static uint32_t nextRenderTarget = 0;
+	// Render Work
+	mColourImages[nextRenderTarget]->ClearImage(1.0f);
+	mColourImages[nextRenderTarget]->BlitFullImage(*mImage);
 
-	CommandBuffer * currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
-	SyncedPresentable nextPresentable;
-	bool isPresentableReady = GetFromAvailableQueue(nextPresentable);
+	mRenderInstance->Draw(*mRenderPasses[nextRenderTarget]);
+
+	SetPresImage(mColourImages[nextRenderTarget++]);
+
+	if (nextRenderTarget == 4)
+		nextRenderTarget = 0;
+}
+
+
+
+
+
+void VulkanDevice::BeginFrame()
+{
+	bool isPresentableReady = GetFromAvailableQueue(mNextPresentable);
 
 	if (!isPresentableReady)
 		return;
 
-	uint32_t nextImage = nextPresentable.mEngineImageIndex;
-
-
-	// Render Work
-	mColourImages[nextImage]->ClearImage(1.0f);
-	mColourImages[nextImage]->BlitFullImage(*mImage);
+	mNextImage = mNextPresentable.mEngineImageIndex;
+}
 	
-	DoRender(nextImage);
+
+
+
+
+void VulkanDevice::Present()
+{
+	CommandBuffer * currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
 
 	// Finished render work, do boilerplate
 	VkSemaphore pendingSignal = currentCommandBuffer->GetCompleteSignal();
-	currentCommandBuffer->SubmitCommandBuffer();
-	mCommandPool->NextCmdBuffer();
-
 
 	// Blit to presentable Image.
-	currentCommandBuffer = mCommandPool->GetCurrentCommandBuffer();
+	currentCommandBuffer = mCommandPool->NextCmdBuffer();
 
-	mPresentableImageArray[nextImage].BlitFullImage(*mColourImages[nextImage]);
-	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[nextImage]);
+	mPresentableImageArray[mNextImage].BlitFullImage(*mPresentationImage);
+	currentCommandBuffer->GetImageReadyForPresenting(mPresentableImageArray[mNextImage]);
 
 	// Add semaphores that blit to backbuffer needs to wait for.
 	currentCommandBuffer->AddWaitSignal(pendingSignal);
-	currentCommandBuffer->AddWaitSignal(nextPresentable.mWaitForAcquireSemaphore);
+	currentCommandBuffer->AddWaitSignal(mNextPresentable.mWaitForAcquireSemaphore);
 
-	currentCommandBuffer->AddFinishSignal(nextPresentable.mWaitForPresentSemaphore);
+	currentCommandBuffer->AddFinishSignal(mNextPresentable.mWaitForPresentSemaphore);
 
 	// Submit Blit
-	currentCommandBuffer->SubmitCommandBuffer();
 	mCommandPool->NextCmdBuffer();
 
-
-	AddToPresentQueue(nextPresentable);
+	AddToPresentQueue(mNextPresentable);
 }
 
 
@@ -528,16 +541,4 @@ void VulkanDevice::TakeInput(unsigned int keyPress)
 
 	if (keyPress == 39)
 		mRenderInstance->ChangeWorldPosition(0.0f, 1.0f, 0.0f);
-}
-
-
-
-
-
-void VulkanDevice::DoRender(uint32_t nextImage)
-{
-
-		mRenderInstance->Draw(*mRenderPasses[nextImage]);
-
-		//mRenderInstance2->Draw(*mRenderPasses[nextImage]);
 }
