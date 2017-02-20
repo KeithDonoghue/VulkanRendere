@@ -14,15 +14,15 @@
 #include <thread>
 
 
-#if VK_NO_PROTOTYPES
 
 
 // EXT_debug_report function pointers
 
-PFN_vkCreateDebugReportCallbackEXT	vkCreateDebugReportCallbackEXT;
-PFN_vkDebugReportMessageEXT			vkDebugReportMessageEXT;
-PFN_vkDestroyDebugReportCallbackEXT	vkDestroyDebugReportCallbackEXT;
+PFN_vkCreateDebugReportCallbackEXT	fpCreateDebugReportCallbackEXT;
+PFN_vkDebugReportMessageEXT			fpDebugReportMessageEXT;
+PFN_vkDestroyDebugReportCallbackEXT	fpDestroyDebugReportCallbackEXT;
 
+#if VK_NO_PROTOTYPES
 
 // WSI functions
 PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
@@ -237,6 +237,7 @@ MyEngine::~MyEngine()
 
 void MyEngine::InitLoader()
 {
+#if VK_NO_PROTOTYPES
 	HMODULE VulkanLoader = LoadLibrary("vulkan-1-1-0-30-0.dll");
 
 	vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(VulkanLoader, "vkGetInstanceProcAddr");
@@ -249,6 +250,7 @@ void MyEngine::InitLoader()
 
 	vkCreateInstance = (PFN_vkCreateInstance)
 		GetProcAddress(VulkanLoader, "vkCreateInstance");
+#endif
 }
 
 
@@ -273,14 +275,13 @@ void MyEngine::SetWindowOffsetAndSize(int x, int y, int width, int height)
 void MyEngine::GetInstanceExtensionPointers()
 {
 
-#if VK_NO_PROTOTYPES
 	// EXT_debug_report function pointers
 
-	vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(TheVulkanInstance, "vkCreateDebugReportCallbackEXT");
-	vkDebugReportMessageEXT = (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(TheVulkanInstance, "vkDebugReportMessageEXT");
-	vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(TheVulkanInstance, "vkDestroyDebugReportCallbackEXT");
+	fpCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(TheVulkanInstance, "vkCreateDebugReportCallbackEXT");
+	fpDebugReportMessageEXT = (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(TheVulkanInstance, "vkDebugReportMessageEXT");
+	fpDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(TheVulkanInstance, "vkDestroyDebugReportCallbackEXT");
 
-
+#if VK_NO_PROTOTYPES
 
 	// VK_KHR_surface function pointers
 
@@ -472,7 +473,7 @@ void MyEngine::SetUpDebugReportStuff()
 		DebugCallbackCreateinfo.pUserData = this;
 
 	/* Register the callback */
-	VkResult result = vkCreateDebugReportCallbackEXT(TheVulkanInstance, &DebugCallbackCreateinfo, nullptr, &m_callback);
+	VkResult result = fpCreateDebugReportCallbackEXT(TheVulkanInstance, &DebugCallbackCreateinfo, nullptr, &m_callback);
 	if (result != VK_SUCCESS)
 	{
 		OutputDebugString("Didn't succeed\n");
@@ -484,7 +485,7 @@ void MyEngine::SetUpDebugReportStuff()
 
 
 	/* Register the callback */
-	result = vkCreateDebugReportCallbackEXT(TheVulkanInstance, &DebugCallbackCreateinfo, nullptr, &m_InformationCallback);
+	result = fpCreateDebugReportCallbackEXT(TheVulkanInstance, &DebugCallbackCreateinfo, nullptr, &m_InformationCallback);
 	if (result != VK_SUCCESS)
 	{
 		OutputDebugString("Didn't succeed\n");
@@ -497,8 +498,8 @@ void MyEngine::SetUpDebugReportStuff()
 
 void MyEngine::DestroyDebugReportStuff()
 {
-	vkDestroyDebugReportCallbackEXT(TheVulkanInstance, m_callback, nullptr);
-	vkDestroyDebugReportCallbackEXT(TheVulkanInstance, m_InformationCallback, nullptr);
+	fpDestroyDebugReportCallbackEXT(TheVulkanInstance, m_callback, nullptr);
+	fpDestroyDebugReportCallbackEXT(TheVulkanInstance, m_InformationCallback, nullptr);
 }
 
 
