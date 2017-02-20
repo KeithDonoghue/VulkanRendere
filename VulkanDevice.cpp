@@ -5,7 +5,7 @@
 #include "DescriptorPool.h"
 #include "CommandPool.h"
 #include "CommandBuffer.h"
-#include "RenderPass.h"
+#include "VulkanRenderPass.h"
 #include "ShaderModule.h"
 #include "VulkanPipeline.h"
 #include "RenderInstance.h"
@@ -416,7 +416,7 @@ void  VulkanDevice::CreateRenderTargets(int width, int height)
 	{
 		mDepthImages.emplace_back(new VulkanImage(this, width, height, ImageType::VULKAN_IMAGE_DEPTH));
 		mColourImages.emplace_back(new VulkanImage(this, width, height, ImageType::VULKAN_IMAGE_COLOR_RGBA8));
-		mRenderPasses.emplace_back(new RenderPass(*this, *mDepthImages[i], *mColourImages[i]));
+		mRenderPasses.emplace_back(new VulkanRenderPass(*this, *mDepthImages[i], *mColourImages[i]));
 	}
 }
 
@@ -431,9 +431,10 @@ void  VulkanDevice::CreateInitialData()
 
 
 
-	mVert = ShaderModule::CreateVertexShader(*this);
-	mFrag = ShaderModule::CreateFragmentShader(*this);
-	mFrag2 = ShaderModule::CreateFragmentShader2(*this);
+	mVert = new ShaderModule(*this, "Resources/vert.spv");
+	mFrag = new ShaderModule(*this, "Resources/frag.spv");
+	mFrag2 = new ShaderModule(*this, "Resources/red.spv");
+
 	mPipeline = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], *mVert, *mFrag);
 	mPipeline2 = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], *mVert, *mFrag2);
 	mRenderInstance = std::make_shared<RenderInstance>(*this, mPipeline, mImage);
@@ -462,31 +463,39 @@ void  VulkanDevice::CreateInitialData()
 
 void VulkanDevice::DoRendering()
 {
-	static uint32_t nextRenderTarget = 0;
 	// Render Work
-	mColourImages[nextRenderTarget]->ClearImage(1.0f);
-	mColourImages[nextRenderTarget]->BlitFullImage(*mImage);
+	mRenderTarget->ClearImage(1.0f);
+	mRenderTarget->BlitFullImage(*mImage);
 
-	mRenderInstance->Draw(*mRenderPasses[nextRenderTarget]);
+	mRenderInstance->Draw(*mCurrentRenderPass);
 
-	SetPresImage(mColourImages[nextRenderTarget++]);
+	SetPresImage(mRenderTarget);
 
-	if (nextRenderTarget == 4)
-		nextRenderTarget = 0;
 }
 
 
 
 
 
-void VulkanDevice::BeginFrame()
+bool VulkanDevice::BeginFrame()
 {
 	bool isPresentableReady = GetFromAvailableQueue(mNextPresentable);
 
 	if (!isPresentableReady)
-		return;
+		return false;
 
 	mNextImage = mNextPresentable.mEngineImageIndex;
+
+	static uint32_t nextRenderTarget = 0;
+
+	mRenderTarget = mColourImages[nextRenderTarget];
+	mCurrentRenderPass = mRenderPasses[nextRenderTarget];
+	nextRenderTarget++;
+
+	if (nextRenderTarget == 4)
+		nextRenderTarget = 0;
+
+	return true;
 }
 	
 

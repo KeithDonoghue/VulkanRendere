@@ -6,12 +6,12 @@
 
 class VulkanDevice;
 class ShaderModule;
-class RenderPass;
+class VulkanRenderPass;
 
 class VulkanPipeline
 {
 public:
-	VulkanPipeline(VulkanDevice&, RenderPass&, ShaderModule&, ShaderModule&);
+	VulkanPipeline(VulkanDevice&, VulkanRenderPass&, ShaderModule&, ShaderModule&);
 	~VulkanPipeline();
 
 	VkPipeline getVkPipeline(){ return m_TheVulkanPipeline; }
@@ -22,7 +22,7 @@ public:
 	VkPipelineDepthStencilStateCreateInfo * CreateDepthStencilState(VkPipelineDepthStencilStateCreateInfo*);
 	VkPipelineRasterizationStateCreateInfo * CreateRasterisationState(VkPipelineRasterizationStateCreateInfo*);
 
-	void CreatePipelineLayout(RenderPass&, ShaderModule&, ShaderModule&);
+	void CreatePipelineLayout(VulkanRenderPass&, ShaderModule&, ShaderModule&);
 
 private:
 	VkDescriptorSetLayout mSetLayout;

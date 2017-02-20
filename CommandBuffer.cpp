@@ -3,7 +3,7 @@
 #include "VulkanDevice.h"
 #include "VulkanImage.h"
 #include "VulkanBuffer.h"
-#include "RenderPass.h"
+#include "VulkanRenderPass.h"
 #include "VulkanPipeline.h"
 
 #include <cstring>
@@ -275,7 +275,7 @@ void CommandBuffer::GetImageReadyForPresenting(VulkanImage& theImage)
 
 
 
-void CommandBuffer::SetDrawState(RenderPass&  theRenderPass,
+void CommandBuffer::SetDrawState(VulkanRenderPass&  theRenderPass,
 	VulkanPipeline& thePipeline,
 	VulkanImage& theImage,
 	VkSampler theSampler)

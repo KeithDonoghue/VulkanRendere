@@ -15,10 +15,6 @@ public:
 	VulkanDevice& getDevice(){ return mDevice; }
 	VkShaderModule getVkShaderModule(){ return m_TheVulkanShaderModule; } 
 
-	static ShaderModule * CreateVertexShader(VulkanDevice&);
-	static ShaderModule * CreateFragmentShader(VulkanDevice&);
-	static ShaderModule * CreateFragmentShader2(VulkanDevice&);
-
 private:
 	VulkanDevice& mDevice;
 	VkShaderModule m_TheVulkanShaderModule;

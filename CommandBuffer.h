@@ -51,7 +51,7 @@ public:
 
 	void SetUpMVP(VulkanPipeline&, glm::mat4&);
 	void SetInstanceData(VulkanPipeline&, glm::mat4 *, uint32_t, uint32_t);
-	void SetDrawState(RenderPass&, VulkanPipeline&, VulkanImage&, VkSampler);
+	void SetDrawState(VulkanRenderPass&, VulkanPipeline&, VulkanImage&, VkSampler);
 	void Draw(VertexDraw);
 	void Draw(IndexDraw);
 

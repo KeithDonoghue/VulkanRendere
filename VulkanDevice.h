@@ -39,7 +39,7 @@ class CommandPool;
 class DescriptorPool;
 class VulkanImage;
 class VulkanMemMngr;
-class RenderPass;
+class VulkanRenderPass;
 class ShaderModule;
 class VulkanPipeline;
 class RenderInstance;
@@ -107,7 +107,7 @@ public:
 		mPresentationImage = theImage;
 	}
 
-	void BeginFrame();
+	bool BeginFrame();
 	void Present();
 	void DoRendering();
 	void TakeInput(unsigned int);
@@ -143,11 +143,12 @@ private:
 	VkDeviceQueueCreateInfo mQueueCreateInfo;
 	VkDeviceCreateInfo mCreateInfo;
 
-	VulkanImage * mImage;
+	VulkanImage * mImage, *mRenderTarget;
+	VulkanRenderPass * mCurrentRenderPass;
 
 	std::vector<VulkanImage*> mDepthImages;
 	std::vector<VulkanImage*> mColourImages;
-	std::vector<RenderPass*> mRenderPasses;
+	std::vector<VulkanRenderPass*> mRenderPasses;
 
 	std::unique_ptr<DescriptorPool> mDescriptorPool;
 	std::unique_ptr<CommandPool>	mCommandPool;

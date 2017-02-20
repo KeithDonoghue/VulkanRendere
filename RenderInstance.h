@@ -9,7 +9,7 @@
 #include <glm/mat4x4.hpp> // glm::mat4
  
 class VulkanImage;
-class RenderPass;
+class VulkanRenderPass;
 class VulkanPipeline;
 class VulkanDevice;
 class VulkanBuffer;
@@ -76,7 +76,7 @@ class RenderInstance{
 public:
 	RenderInstance(VulkanDevice&, std::shared_ptr<VulkanPipeline>, VulkanImage*);
 	~RenderInstance();
-	void Draw(RenderPass&);
+	void Draw(VulkanRenderPass&);
 	void SetDrawBuffer(std::shared_ptr<VulkanBuffer>, uint32_t);
 	void SetDraw(VertexDraw);
 	void SetDraw(IndexDraw);

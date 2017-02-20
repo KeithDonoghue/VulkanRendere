@@ -1,6 +1,6 @@
 #include "VulkanPipeline.h"
 #include "VulkanDevice.h"
-#include "RenderPass.h"
+#include "VulkanRenderPass.h"
 #include "ShaderModule.h"
 #include "DescriptorPool.h"
 
@@ -8,7 +8,7 @@
 
 
 
-VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice, RenderPass& theRenderPass, ShaderModule& vert, ShaderModule& frag) :
+VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice, VulkanRenderPass& theRenderPass, ShaderModule& vert, ShaderModule& frag) :
 mDevice(theDevice)
 {
 	CreatePipelineLayout(theRenderPass, vert, frag);
@@ -225,7 +225,7 @@ VkPipelineRasterizationStateCreateInfo * VulkanPipeline::CreateRasterisationStat
 
 
 
-void VulkanPipeline::CreatePipelineLayout(RenderPass& theRenderPass, ShaderModule& vert, ShaderModule& frag)
+void VulkanPipeline::CreatePipelineLayout(VulkanRenderPass& theRenderPass, ShaderModule& vert, ShaderModule& frag)
 {
 	
 	VkDescriptorSetLayoutBinding bindings = {};

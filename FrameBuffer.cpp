@@ -1,10 +1,10 @@
 #include "FrameBuffer.h"
-#include "RenderPass.h"
+#include "VulkanRenderPass.h"
 #include "VulkanImage.h"
 
 
 
-FrameBuffer::FrameBuffer(RenderPass & theRenderPass,
+FrameBuffer::FrameBuffer(VulkanRenderPass & theRenderPass,
 	uint32_t  width,
 	uint32_t height,
 	uint32_t layers):

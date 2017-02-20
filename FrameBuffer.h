@@ -6,11 +6,11 @@
 #include <vector>
 
 class VulkanImage;
-class RenderPass;
+class VulkanRenderPass;
 
 class FrameBuffer{
 public: 
-	FrameBuffer(RenderPass&, uint32_t, uint32_t, uint32_t);
+	FrameBuffer(VulkanRenderPass&, uint32_t, uint32_t, uint32_t);
 	~FrameBuffer();
 	VkFramebuffer getVkFramebuffer() { return m_TheVulkanFramebuffer; }
 	void init(std::vector<VulkanImage*>);
@@ -22,7 +22,7 @@ public:
 
 private: //members
 	VkFramebufferCreateInfo CreateInfo;
-	RenderPass&				mRenderPass;
+	VulkanRenderPass&				mRenderPass;
 	std::vector<VkImageView> mAttachmentViews;
 
 	VkFramebuffer			m_TheVulkanFramebuffer;

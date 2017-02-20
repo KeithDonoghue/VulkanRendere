@@ -1,6 +1,6 @@
 #include "RenderInstance.h"
 #include "VulkanImage.h"
-#include "RenderPass.h"
+#include "VulkanRenderPass.h"
 #include "CommandPool.h"
 #include "CommandBuffer.h"
 #include "VulkanBuffer.h"
@@ -62,7 +62,7 @@ RenderInstance::~RenderInstance()
 
 
 
-void RenderInstance::Draw(RenderPass& theRenderPass)
+void RenderInstance::Draw(VulkanRenderPass& theRenderPass)
 {
 
 	theRenderPass.Begin();
