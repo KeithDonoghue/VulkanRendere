@@ -94,9 +94,9 @@ VulkanDevice::~VulkanDevice()
 		delete mRenderPasses[i];
 	}
 
-	delete mVert;
-	delete mFrag;
-	delete mFrag2;
+	mVert.reset();
+	mFrag.reset();
+	mFrag2.reset();
 
 
 
@@ -431,12 +431,12 @@ void  VulkanDevice::CreateInitialData()
 
 
 
-	mVert = new ShaderModule(*this, "Resources/vert.spv");
-	mFrag = new ShaderModule(*this, "Resources/frag.spv");
-	mFrag2 = new ShaderModule(*this, "Resources/red.spv");
+	mVert = std::make_shared<ShaderModule>(*this, "Resources/vert.spv");
+	mFrag = std::make_shared<ShaderModule>(*this, "Resources/frag.spv");
+	mFrag2 = std::make_shared<ShaderModule>(*this, "Resources/red.spv");
 
-	mPipeline = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], *mVert, *mFrag);
-	mPipeline2 = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], *mVert, *mFrag2);
+	mPipeline = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], mVert, mFrag);
+	mPipeline2 = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], mVert, mFrag2);
 	mRenderInstance = std::make_shared<RenderInstance>(*this, mPipeline, mImage);
 	mRenderInstance2 = std::make_shared<RenderInstance>(*this, mPipeline2, mImage);
 
@@ -488,8 +488,8 @@ bool VulkanDevice::BeginFrame()
 
 	static uint32_t nextRenderTarget = 0;
 
-	mRenderTarget = mColourImages[nextRenderTarget];
-	mCurrentRenderPass = mRenderPasses[nextRenderTarget];
+	//mRenderTarget = mColourImages[nextRenderTarget];
+	//mCurrentRenderPass = mRenderPasses[nextRenderTarget];
 	nextRenderTarget++;
 
 	if (nextRenderTarget == 4)

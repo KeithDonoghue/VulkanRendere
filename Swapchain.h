@@ -13,6 +13,7 @@ public:
 	Swapchain(VulkanDevice*, EngineWindow&, VkSwapchainCreateInfoKHR);
 	~Swapchain();
 	void Resize(uint32_t, uint32_t){};
+	uint32_t getNumImages(){ return mSwapchainImageCount; }
 	void GetImages();
 	void Update();
 

@@ -155,8 +155,8 @@ private:
 	std::unique_ptr<VulkanMemMngr> mMemoryManager;
 
 
-	ShaderModule * mVert;
-	ShaderModule * mFrag, *mFrag2;
+	std::shared_ptr<ShaderModule> mVert;
+	std::shared_ptr<ShaderModule> mFrag, mFrag2;
 	std::shared_ptr<VulkanPipeline> mPipeline, mPipeline2;
 	std::shared_ptr<RenderInstance> mRenderInstance, mRenderInstance2;
 

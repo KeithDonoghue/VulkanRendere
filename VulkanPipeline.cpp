@@ -8,10 +8,13 @@
 
 
 
-VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice, VulkanRenderPass& theRenderPass, ShaderModule& vert, ShaderModule& frag) :
+VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice, 
+	VulkanRenderPass& theRenderPass, 
+	std::shared_ptr<ShaderModule> vert, 
+	std::shared_ptr<ShaderModule> frag) :
 mDevice(theDevice)
 {
-	CreatePipelineLayout(theRenderPass, vert, frag);
+	CreatePipelineLayout(theRenderPass, *vert, *frag);
 
 
 	
@@ -20,7 +23,7 @@ mDevice(theDevice)
 	stageCreateInfo.pNext = nullptr;
 	stageCreateInfo.flags = 0; // reserved for future use.
 	stageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	stageCreateInfo.module = vert.getVkShaderModule() ;
+	stageCreateInfo.module = vert->getVkShaderModule() ;
 	stageCreateInfo.pName = "main";
 	stageCreateInfo.pSpecializationInfo = nullptr;
 
@@ -29,7 +32,7 @@ mDevice(theDevice)
 
 
 	stageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	stageCreateInfo.module = frag.getVkShaderModule();
+	stageCreateInfo.module = frag->getVkShaderModule();
 
 	stages.push_back(stageCreateInfo);
 
@@ -41,12 +44,12 @@ mDevice(theDevice)
 
 	shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-	shaderStages[0].module = vert.getVkShaderModule();
+	shaderStages[0].module = vert->getVkShaderModule();
 	shaderStages[0].pName = "main";
 
 	shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	shaderStages[1].module = frag.getVkShaderModule();
+	shaderStages[1].module = frag->getVkShaderModule();
 	shaderStages[1].pName = "main";
 
 	VkPipelineVertexInputStateCreateInfo VIScreateInfo = {};

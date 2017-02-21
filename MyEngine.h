@@ -2,6 +2,8 @@
 #define MY_ENGINE_HDR 1
 
 #include "ApiUsageHeader.h"
+#include "ShaderModule.h"
+#include "EngineImage.h"
 
 #include "Windows.h"
 
@@ -11,10 +13,15 @@
 #include <fstream>
 #include <thread>
 #include <atomic>
+#include <memory>
 
 class EngineWindow;
 class Swapchain;
 class VulkanDevice;
+class VulkanRenderPass;
+class VulkanPipeline;
+class RenderInstance;
+class VulkanBuffer;
 
 
 #define GET_INSTANCE_PROC_ADDR(inst, entrypoint)                               \
@@ -51,11 +58,20 @@ public:
 	void TakeInput(unsigned int);
 
 
+	void  CreateRenderTargets(int, int, uint32_t);
+	void  MyEngine::CreateInitialData();
+
+	EngineImage * CreateEngineImage(std::string);
+	void SetImage(EngineImage&);
+	void SetUpTargets();
+
+
+
 
 	std::string	GetName()	{ return name; }
 	void		CreateGameWindow(HINSTANCE);
 	void		FinishedFrameWork();
-	void PrintLocation(char * file = __FILE__){ OutputDebugString(file); }
+	void		PrintLocation(char * file = __FILE__){ OutputDebugString(file); }
 
 private:
 	std::string name;
@@ -74,6 +90,20 @@ private:
 	EngineWindow *	m_TheWindow;
 	Swapchain * m_TheSwapchain;
 	VulkanDevice *  mVulkanDevice;
+
+	std::vector<VulkanImage*> mDepthImages;
+	std::vector<VulkanImage*> mColourImages;
+	std::vector<VulkanRenderPass*> mRenderPasses;
+
+	VulkanImage * mRenderTarget;
+	VulkanRenderPass * mCurrentRenderPass;
+
+
+	std::vector<std::shared_ptr<ShaderModule>> mShaders;
+	EngineImage * mImage;
+
+	std::shared_ptr<VulkanPipeline> mPipeline, mPipeline2;
+	std::shared_ptr<RenderInstance> mRenderInstance, mRenderInstance2;
 
 	int mWindowWidth, mWindowHeight;
 

@@ -2,6 +2,13 @@
 #include "WindowsWindow.h"
 #include "Swapchain.h"
 #include "VulkanDevice.h"
+#include "EngineImage.h"
+#include "VulkanImage.h"
+#include "VulkanRenderPass.h"
+#include "VulkanPipeline.h"
+#include "RenderInstance.h"
+#include "VulkanBuffer.h"
+
 
 #pragma comment(linker, "/subsystem:windows")
 #include <Windows.h>
@@ -856,8 +863,8 @@ void MyEngine::SpawnUpdateThread()
 
 void MyEngine::Run()
 {
-	mVulkanDevice->CreateRenderTargets(mWindowWidth, mWindowHeight);
-	mVulkanDevice->CreateInitialData();
+	CreateRenderTargets(mWindowWidth, mWindowHeight, m_TheSwapchain->getNumImages());
+	CreateInitialData();
 
 	while (!mFinish)
 	{
@@ -874,8 +881,16 @@ void MyEngine::Update()
 {	
 	if (mVulkanDevice->BeginFrame())
 	{
-		mVulkanDevice->DoRendering();
+		SetUpTargets();
+//		mVulkanDevice->DoRendering();
+		mRenderTarget->ClearImage(1.0f);
+		mRenderTarget->BlitFullImage(*mImage->getVulkanImage());
+
+		mRenderInstance->Draw(*mCurrentRenderPass);
+
+		mVulkanDevice->SetPresImage(mRenderTarget);
 		mVulkanDevice->Present();
+
 	}
 }
 
@@ -883,8 +898,111 @@ void MyEngine::Update()
 
 
 
+void MyEngine::SetUpTargets()
+{
+	static uint32_t nextRenderTarget = 0;
+
+	mRenderTarget = mColourImages[nextRenderTarget];
+	mCurrentRenderPass = mRenderPasses[nextRenderTarget];
+	nextRenderTarget++;
+
+	if (nextRenderTarget == 4)
+		nextRenderTarget = 0;
+}
+
+
+
 void MyEngine::TakeInput(unsigned int keyPress)
 {
 	EngineLog("key: ", keyPress);
-	mVulkanDevice->TakeInput(keyPress);
+	if (keyPress == 65)
+		mRenderInstance->ChangeWorldPosition(1.0f, 0.0f, 0.0f);
+
+	if (keyPress == 66)
+		mRenderInstance->ChangeWorldPosition(-1.0f, 0.0f, 0.0f);
+
+	if (keyPress == 67)
+		mRenderInstance->ChangeWorldPosition(0.0f, 0.0f, 1.0f);
+
+	if (keyPress == 68)
+		mRenderInstance->ChangeWorldPosition(0.0f, 0.0f, -1.0f);
+
+	if (keyPress == 37)
+		mRenderInstance->ChangeWorldPosition(0.0f, -1.0f, 0.0f);
+
+	if (keyPress == 39)
+		mRenderInstance->ChangeWorldPosition(0.0f, 1.0f, 0.0f);
+	//mVulkanDevice->TakeInput(keyPress);
+}
+
+
+
+
+
+EngineImage * MyEngine::CreateEngineImage(std::string filename)
+{
+	return new EngineImage(mVulkanDevice, filename);
+}
+
+
+
+
+
+void MyEngine::SetImage(EngineImage& theImage)
+{
+	mVulkanDevice->SetPresImage(theImage.getVulkanImage()); 
+}
+
+
+
+
+
+void  MyEngine::CreateRenderTargets(int width, int height, uint32_t numImages)
+{
+	for (uint32_t i = 0; i < numImages; i++)
+	{
+		mDepthImages.emplace_back(new VulkanImage(mVulkanDevice, width, height, ImageType::VULKAN_IMAGE_DEPTH));
+		mColourImages.emplace_back(new VulkanImage(mVulkanDevice, width, height, ImageType::VULKAN_IMAGE_COLOR_RGBA8));
+		mRenderPasses.emplace_back(new VulkanRenderPass(*mVulkanDevice, *mDepthImages[i], *mColourImages[i]));
+	}
+}
+
+
+
+
+
+
+void  MyEngine::CreateInitialData()
+{
+
+	mImage = CreateEngineImage("Resources/jpeg_bad.jpg");
+
+	mShaders.push_back(std::make_shared<ShaderModule>(*mVulkanDevice, "Resources/vert.spv"));
+	mShaders.push_back(std::make_shared<ShaderModule>(*mVulkanDevice, "Resources/frag.spv"));
+	mShaders.push_back(std::make_shared<ShaderModule>(*mVulkanDevice, "Resources/red.spv"));
+
+	EngineLog("Hello");
+
+	mPipeline = std::make_shared<VulkanPipeline>(*mVulkanDevice, *mRenderPasses[0], mShaders[0], mShaders[1]);
+	mPipeline2 = std::make_shared<VulkanPipeline>(*mVulkanDevice, *mRenderPasses[0], mShaders[0], mShaders[2]);
+	mRenderInstance = std::make_shared<RenderInstance>(*mVulkanDevice, mPipeline, mImage->getVulkanImage());
+	mRenderInstance2 = std::make_shared<RenderInstance>(*mVulkanDevice, mPipeline2, mImage->getVulkanImage());
+
+	
+	std::shared_ptr<VulkanBuffer> drawbuffer = VulkanBuffer::SetUpVertexBuffer(*mVulkanDevice);
+	std::shared_ptr<VulkanBuffer> indexDrawbuffer = VulkanBuffer::SetUpVertexIndexBuffer(*mVulkanDevice);
+	std::shared_ptr<VulkanBuffer> indexbuffer = VulkanBuffer::SetUpIndexBuffer(*mVulkanDevice);
+
+	indexbuffer->DoTheImportThing("Resources/cube.dae");
+
+
+	VertexDraw	theDraw(6, 1, 0, 0, drawbuffer);
+	IndexDraw	theIndexDraw(36, 2, 0, 0, 0, indexDrawbuffer, indexbuffer);
+
+	mRenderInstance->SetDraw(theDraw);
+	mRenderInstance2->SetDraw(theDraw);
+
+	mRenderInstance->SetDraw(theIndexDraw);
+	mRenderInstance2->SetDraw(theIndexDraw);
+	
 }

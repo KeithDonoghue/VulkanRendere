@@ -4,6 +4,8 @@
 #include "ApiUsageHeader.h"
 
 
+#include <memory>
+
 class VulkanDevice;
 class ShaderModule;
 class VulkanRenderPass;
@@ -11,7 +13,7 @@ class VulkanRenderPass;
 class VulkanPipeline
 {
 public:
-	VulkanPipeline(VulkanDevice&, VulkanRenderPass&, ShaderModule&, ShaderModule&);
+	VulkanPipeline(VulkanDevice&, VulkanRenderPass&, std::shared_ptr<ShaderModule>, std::shared_ptr<ShaderModule>);
 	~VulkanPipeline();
 
 	VkPipeline getVkPipeline(){ return m_TheVulkanPipeline; }
