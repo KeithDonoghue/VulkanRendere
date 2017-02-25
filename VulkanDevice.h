@@ -101,7 +101,6 @@ public:
 	void AddToPresentQueue(SyncedPresentable);
 	bool GetFromPresentQueue(SyncedPresentable&);
 	void CreateInitialData();
-	void CreateRenderTargets(int, int);
 	void SetPresImage(VulkanImage * theImage)
 	{
 		mPresentationImage = theImage;
@@ -109,7 +108,6 @@ public:
 
 	bool BeginFrame();
 	void Present();
-	void DoRendering();
 	void TakeInput(unsigned int);
 
 
@@ -143,22 +141,10 @@ private:
 	VkDeviceQueueCreateInfo mQueueCreateInfo;
 	VkDeviceCreateInfo mCreateInfo;
 
-	VulkanImage * mImage, *mRenderTarget;
-	VulkanRenderPass * mCurrentRenderPass;
-
-	std::vector<VulkanImage*> mDepthImages;
-	std::vector<VulkanImage*> mColourImages;
-	std::vector<VulkanRenderPass*> mRenderPasses;
 
 	std::unique_ptr<DescriptorPool> mDescriptorPool;
 	std::unique_ptr<CommandPool>	mCommandPool;
 	std::unique_ptr<VulkanMemMngr> mMemoryManager;
-
-
-	std::shared_ptr<ShaderModule> mVert;
-	std::shared_ptr<ShaderModule> mFrag, mFrag2;
-	std::shared_ptr<VulkanPipeline> mPipeline, mPipeline2;
-	std::shared_ptr<RenderInstance> mRenderInstance, mRenderInstance2;
 
 	VulkanImage * mPresentationImage;
 	uint32_t mNextImage;

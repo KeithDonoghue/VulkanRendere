@@ -81,27 +81,6 @@ VulkanDevice::~VulkanDevice()
 {
 	vkDeviceWaitIdle(TheVulkanDevice);
 
-	mPipeline.reset();
-	mPipeline2.reset();
-
-	mRenderInstance.reset();
-	mRenderInstance2.reset();
-
-	for (size_t i = 0; i < mDepthImages.size(); i++)
-	{
-		delete mDepthImages[i];
-		delete mColourImages[i];
-		delete mRenderPasses[i];
-	}
-
-	mVert.reset();
-	mFrag.reset();
-	mFrag2.reset();
-
-
-
-	delete mImage;
-
 	mCommandPool.reset();
 	mMemoryManager.reset();
 	mDescriptorPool.reset();
@@ -410,71 +389,6 @@ bool VulkanDevice::GetFromPresentQueue(SyncedPresentable& nextPresentable)
 
 
 
-void  VulkanDevice::CreateRenderTargets(int width, int height)
-{
-	for (size_t i = 0; i < mPresentableImageArray.size(); i++)
-	{
-		mDepthImages.emplace_back(new VulkanImage(this, width, height, ImageType::VULKAN_IMAGE_DEPTH));
-		mColourImages.emplace_back(new VulkanImage(this, width, height, ImageType::VULKAN_IMAGE_COLOR_RGBA8));
-		mRenderPasses.emplace_back(new VulkanRenderPass(*this, *mDepthImages[i], *mColourImages[i]));
-	}
-}
-
-
-
-
-
-
-void  VulkanDevice::CreateInitialData()
-{
-	mImage = new VulkanImage(this, "Resources/jpeg_bad.jpg");
-
-
-
-	mVert = std::make_shared<ShaderModule>(*this, "Resources/vert.spv");
-	mFrag = std::make_shared<ShaderModule>(*this, "Resources/frag.spv");
-	mFrag2 = std::make_shared<ShaderModule>(*this, "Resources/red.spv");
-
-	mPipeline = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], mVert, mFrag);
-	mPipeline2 = std::make_shared<VulkanPipeline>(*this, *mRenderPasses[0], mVert, mFrag2);
-	mRenderInstance = std::make_shared<RenderInstance>(*this, mPipeline, mImage);
-	mRenderInstance2 = std::make_shared<RenderInstance>(*this, mPipeline2, mImage);
-
-	std::shared_ptr<VulkanBuffer> drawbuffer = VulkanBuffer::SetUpVertexBuffer(*this);
-	std::shared_ptr<VulkanBuffer> indexDrawbuffer = VulkanBuffer::SetUpVertexIndexBuffer(*this);
-	std::shared_ptr<VulkanBuffer> indexbuffer = VulkanBuffer::SetUpIndexBuffer(*this);
-
-	indexbuffer->DoTheImportThing("Resources/cube.dae");
-
-
-	VertexDraw	theDraw(6, 1, 0, 0, drawbuffer);
-	IndexDraw	theIndexDraw(36, 2, 0, 0, 0, indexDrawbuffer, indexbuffer);
-
-	mRenderInstance->SetDraw(theDraw);
-	mRenderInstance2->SetDraw(theDraw);
-
-	mRenderInstance->SetDraw(theIndexDraw);
-	mRenderInstance2->SetDraw(theIndexDraw);
-}
-
-
-
-
-
-void VulkanDevice::DoRendering()
-{
-	// Render Work
-	mRenderTarget->ClearImage(1.0f);
-	mRenderTarget->BlitFullImage(*mImage);
-
-	mRenderInstance->Draw(*mCurrentRenderPass);
-
-	SetPresImage(mRenderTarget);
-
-}
-
-
-
 
 
 bool VulkanDevice::BeginFrame()
@@ -527,27 +441,3 @@ void VulkanDevice::Present()
 	AddToPresentQueue(mNextPresentable);
 }
 
-
-
-
-
-void VulkanDevice::TakeInput(unsigned int keyPress)
-{
-	if (keyPress == 65)
-		mRenderInstance->ChangeWorldPosition(1.0f, 0.0f, 0.0f);
-
-	if (keyPress == 66)
-		mRenderInstance->ChangeWorldPosition(-1.0f, 0.0f, 0.0f);
-
-	if (keyPress == 67)
-		mRenderInstance->ChangeWorldPosition(0.0f, 0.0f, 1.0f);
-
-	if (keyPress == 68)
-		mRenderInstance->ChangeWorldPosition(0.0f, 0.0f, -1.0f);
-
-	if (keyPress == 37)
-		mRenderInstance->ChangeWorldPosition(0.0f, -1.0f, 0.0f);
-
-	if (keyPress == 39)
-		mRenderInstance->ChangeWorldPosition(0.0f, 1.0f, 0.0f);
-}

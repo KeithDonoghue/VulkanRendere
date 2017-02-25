@@ -224,6 +224,27 @@ MyEngine::~MyEngine()
 
 	delete m_TheSwapchain;
 	delete m_TheWindow;
+
+	mPipeline.reset();
+	mPipeline2.reset();
+
+	mRenderInstance.reset();
+	mRenderInstance2.reset();
+
+	for (auto it : mColourImages)
+		delete it;
+
+	for (auto it : mDepthImages)
+		delete it;
+
+	for (auto it : mRenderPasses)
+		delete it;
+
+	delete mImage;
+
+	for (auto & it : mShaders)
+		it.reset();
+
 	delete mVulkanDevice;
 
 
@@ -844,7 +865,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL FirstAllPurposeDebugReportCallback(
 		}
 	}
 
-	
 	return VK_FALSE;
 }
 
@@ -932,7 +952,6 @@ void MyEngine::TakeInput(unsigned int keyPress)
 
 	if (keyPress == 39)
 		mRenderInstance->ChangeWorldPosition(0.0f, 1.0f, 0.0f);
-	//mVulkanDevice->TakeInput(keyPress);
 }
 
 
