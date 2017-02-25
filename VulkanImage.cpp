@@ -17,7 +17,7 @@ VulkanImage::VulkanImage(VulkanDevice * theDevice, VkImage theImage, uint32_t wi
 mDevice(theDevice),
 m_TheVulkanImage(theImage),
 mSystemManaged(systemManaged),
-mType(VULKAN_IMAGE_COLOR_RGBA8),
+mType(ImageType::VULKAN_IMAGE_COLOR_RGBA8),
 mWidth(width),
 mHeight(height),
 mCreatedStandardView(false)
@@ -421,13 +421,13 @@ void VulkanImage::BlitFullImage(VulkanImage& src)
 
 VkFormat VulkanImage::GetFormatForType(ImageType type)
 {
-	static VkFormat FormatMap[ImageType::VULKAN_IMAGE_RANGE_SIZE] =
+	static VkFormat FormatMap[static_cast<int>(ImageType::VULKAN_IMAGE_RANGE_SIZE)] =
 	{
 		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_FORMAT_D16_UNORM
 	};
 
-	return FormatMap[type];
+	return FormatMap[static_cast<int>(type)];
 }
 
 
@@ -445,14 +445,14 @@ VkFormat VulkanImage::GetFormat()
 
 VkImageUsageFlags VulkanImage::GetUsageForType(ImageType type)
 {
-	static VkImageUsageFlags UsageBitsMap[ImageType::VULKAN_IMAGE_RANGE_SIZE] =
+	static VkImageUsageFlags UsageBitsMap[static_cast<int>(ImageType::VULKAN_IMAGE_RANGE_SIZE)] =
 	{
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
 		VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
 	};
 
-	return UsageBitsMap[type];
+	return UsageBitsMap[static_cast<int>(type)];
 }
 
 
@@ -475,13 +475,13 @@ void VulkanImage::TransitionToClearable(VkImageSubresourceRange& subRange)
 
 VkImageAspectFlags VulkanImage::getAspectFlags()
 {
-	static VkImageAspectFlags accessMap[ImageType::VULKAN_IMAGE_RANGE_SIZE] =
+	static VkImageAspectFlags accessMap[static_cast<int>(ImageType::VULKAN_IMAGE_RANGE_SIZE)] =
 	{
 		VK_IMAGE_ASPECT_COLOR_BIT,
 		VK_IMAGE_ASPECT_DEPTH_BIT
 	};
 
-	return accessMap[getType()];
+	return accessMap[static_cast<int>(getType())];
 }
 
 

@@ -3,6 +3,7 @@
 
 #include "ApiUsageHeader.h"
 #include "EngineImage.h"
+#include "VulkanImage.h"
 
 #include "VulkanBuffer.h"
 
@@ -63,11 +64,13 @@ public:
 	void  CreateRenderTargets(int, int, uint32_t);
 	void  CreateInitialData();
 
-	std::shared_ptr<ShaderModule> CreateShaderModule(std::string);
+	std::shared_ptr<ShaderModule>	CreateShaderModule(std::string);
 	std::shared_ptr<VulkanPipeline> CreatePipeline(VulkanRenderPass&, std::shared_ptr<ShaderModule>, std::shared_ptr<ShaderModule>);
 	std::shared_ptr<RenderInstance> CreateRenderInstance(std::shared_ptr<VulkanPipeline>, EngineImage*);
 
-	std::shared_ptr<VulkanBuffer> CreateVulkanBuffer(BufferType, size_t);
+	std::shared_ptr<VulkanBuffer>	CreateVulkanBuffer(BufferType, size_t);
+	VulkanImage *					CreateVulkanImage(uint32_t, uint32_t, ImageType);
+	VulkanRenderPass *				CreateVulkanRenderPass(VulkanImage&, VulkanImage&);
 
 
 	EngineImage * CreateEngineImage(std::string);

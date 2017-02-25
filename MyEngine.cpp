@@ -981,12 +981,29 @@ void  MyEngine::CreateRenderTargets(int width, int height, uint32_t numImages)
 {
 	for (uint32_t i = 0; i < numImages; i++)
 	{
-		mDepthImages.emplace_back(new VulkanImage(mVulkanDevice, width, height, ImageType::VULKAN_IMAGE_DEPTH));
-		mColourImages.emplace_back(new VulkanImage(mVulkanDevice, width, height, ImageType::VULKAN_IMAGE_COLOR_RGBA8));
-		mRenderPasses.emplace_back(new VulkanRenderPass(*mVulkanDevice, *mDepthImages[i], *mColourImages[i]));
+		mDepthImages.emplace_back(CreateVulkanImage(width, height, ImageType::VULKAN_IMAGE_DEPTH));
+		mColourImages.emplace_back(CreateVulkanImage(width, height, ImageType::VULKAN_IMAGE_COLOR_RGBA8));
+		mRenderPasses.emplace_back(CreateVulkanRenderPass(*mDepthImages[i], *mColourImages[i]));
 	}
 }
 
+
+
+
+
+VulkanImage * MyEngine::CreateVulkanImage(uint32_t  width, uint32_t height, ImageType theType)
+{
+	return new VulkanImage(mVulkanDevice, width, height, theType);
+}
+
+
+
+
+
+VulkanRenderPass *	MyEngine::CreateVulkanRenderPass(VulkanImage& image1, VulkanImage& image2)
+{
+	return new VulkanRenderPass(*mVulkanDevice, image1, image2);
+}
 
 
 

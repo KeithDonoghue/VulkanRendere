@@ -12,7 +12,7 @@ class VulkanBuffer;
 
 
 
-typedef enum ImageType
+typedef enum class ImageType
 {
 	VULKAN_IMAGE_COLOR_RGBA8 = 0,
 	VULKAN_IMAGE_DEPTH = 1,
