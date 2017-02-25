@@ -17,15 +17,23 @@
 
 
 
-VulkanBuffer::VulkanBuffer(VulkanDevice& theDevice, VkBufferCreateInfo theBufferCreateInfo, bool isStaging):
+VulkanBuffer::VulkanBuffer(
+	VulkanDevice& theDevice, 
+    BufferType theBufferType, 
+    size_t size,
+	bool isStaging):
 mDevice(theDevice),
+mBufferCreateInfo(getSharedCreateInfo()),
+mSize(size),
+mType(theBufferType),
 TempMemoryBound(false),
 mNumPrimitives(0),
 mIsStaging(isStaging)
 {
-	mSize = theBufferCreateInfo.size;
+	mBufferCreateInfo.size = mSize;
+	mBufferCreateInfo.usage = getUsage();
 
-	VkResult result = vkCreateBuffer(mDevice.getVkDevice(), &theBufferCreateInfo, nullptr, &m_TheVulkanBuffer);
+	VkResult result = vkCreateBuffer(mDevice.getVkDevice(), &mBufferCreateInfo, nullptr, &m_TheVulkanBuffer);
 
 	if (result != VK_SUCCESS)
 	{
@@ -67,7 +75,7 @@ void VulkanBuffer::LoadBufferData(const void * data, uint32_t size)
 	else
 	{
 		if (mStagingBuffer == nullptr)
-			mStagingBuffer = CreateStagingBuffer(mDevice, size);
+			mStagingBuffer = CreateStagingBuffer(size);
 
 		mStagingBuffer->LoadBufferData(data, size);
 
@@ -106,58 +114,9 @@ void VulkanBuffer::BindMemory(bool mappable)
 
 
 
-
-std::shared_ptr<VulkanBuffer> VulkanBuffer::CreateStagingBuffer(VulkanDevice& theDevice, size_t size)
+std::shared_ptr<VulkanBuffer> VulkanBuffer::CreateStagingBuffer(size_t bufferSize)
 {
-
-	VkBufferCreateInfo theBufferCreateInfo = {};
-	theBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	theBufferCreateInfo.pNext = nullptr;
-	theBufferCreateInfo.size = size;
-	theBufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-	theBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	theBufferCreateInfo.queueFamilyIndexCount = 0;
-	theBufferCreateInfo.pQueueFamilyIndices = nullptr;
-	
-	return std::make_shared<VulkanBuffer>(theDevice, theBufferCreateInfo, true);
-}
-
-
-
-
-
-std::shared_ptr<VulkanBuffer> VulkanBuffer::CreateVertexBuffer(VulkanDevice& theDevice, size_t size)
-{
-
-	VkBufferCreateInfo theBufferCreateInfo = {};
-	theBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	theBufferCreateInfo.pNext = nullptr;
-	theBufferCreateInfo.size = size;
-	theBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	theBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	theBufferCreateInfo.queueFamilyIndexCount = 0;
-	theBufferCreateInfo.pQueueFamilyIndices = nullptr;
-
-	return std::make_shared<VulkanBuffer>(theDevice, theBufferCreateInfo, false);
-}
-
-
-
-
-
-std::shared_ptr<VulkanBuffer> VulkanBuffer::CreateIndexBuffer(VulkanDevice& theDevice, size_t size)
-{
-
-	VkBufferCreateInfo theBufferCreateInfo = {};
-	theBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	theBufferCreateInfo.pNext = nullptr;
-	theBufferCreateInfo.size = size;
-	theBufferCreateInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-	theBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	theBufferCreateInfo.queueFamilyIndexCount = 0;
-	theBufferCreateInfo.pQueueFamilyIndices = nullptr;
-
-	return std::make_shared<VulkanBuffer>(theDevice, theBufferCreateInfo, false);
+	return std::make_shared<VulkanBuffer>(mDevice, BufferType::BUFFER_TYPE_STAGING, bufferSize, true);
 }
 
 
@@ -176,7 +135,9 @@ std::shared_ptr<VulkanBuffer> VulkanBuffer::SetUpVertexBuffer(VulkanDevice& theD
 		{ -0.5f, -1.0f, 0.25f, 0.0f, 0.0f },
 	};
 
-	std::shared_ptr<VulkanBuffer> theDrawBuffer = VulkanBuffer::CreateVertexBuffer(theDevice, sizeof(vb));
+	std::shared_ptr<VulkanBuffer> theDrawBuffer = 
+    	std::make_shared<VulkanBuffer>(theDevice, BufferType::BUFFER_TYPE_VERTEX, sizeof(vb), false);
+
 	theDrawBuffer->LoadBufferData(vb, sizeof(vb));
 	return theDrawBuffer;
 }
@@ -199,7 +160,9 @@ std::shared_ptr<VulkanBuffer> VulkanBuffer::SetUpVertexIndexBuffer(VulkanDevice&
 		{ -1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f }
 	};
 
-	std::shared_ptr<VulkanBuffer> theDrawBuffer = VulkanBuffer::CreateVertexBuffer(theDevice, sizeof(vb));
+	std::shared_ptr<VulkanBuffer> theDrawBuffer = 
+		std::make_shared<VulkanBuffer>(theDevice, BufferType::BUFFER_TYPE_VERTEX, sizeof(vb), false);
+
 	theDrawBuffer->LoadBufferData(vb, sizeof(vb));
 	return theDrawBuffer;
 }
@@ -219,7 +182,9 @@ std::shared_ptr<VulkanBuffer> VulkanBuffer::SetUpIndexBuffer(VulkanDevice& theDe
 		2, 7, 6, 2, 3, 7
 	};
 
-	std::shared_ptr<VulkanBuffer> theIndexBuffer = VulkanBuffer::CreateIndexBuffer(theDevice, sizeof(indices));
+	std::shared_ptr<VulkanBuffer> theIndexBuffer = 
+            std::make_shared<VulkanBuffer>(theDevice, BufferType::BUFFER_TYPE_INDEX, sizeof(indices), false);
+
 	theIndexBuffer->LoadBufferData(indices, sizeof(indices));
 	return theIndexBuffer;
 }
@@ -268,3 +233,42 @@ void VulkanBuffer::DoTheImportThing(const std::string& pFile)
 }
 
 
+
+
+
+VkBufferCreateInfo VulkanBuffer::getSharedCreateInfo()
+{
+
+	VkBufferCreateInfo theBufferCreateInfo = {};
+	theBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	theBufferCreateInfo.pNext = nullptr;
+	theBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	theBufferCreateInfo.queueFamilyIndexCount = 0;
+	theBufferCreateInfo.pQueueFamilyIndices = nullptr;
+
+	return theBufferCreateInfo;
+}
+
+
+
+
+VkBufferUsageFlagBits VulkanBuffer::getUsage()
+{
+	return getUsage(mType);
+}
+
+
+
+
+
+VkBufferUsageFlagBits VulkanBuffer::getUsage(BufferType bufferUseType)
+{
+	static VkBufferUsageFlagBits theUsageFlags[BufferType::BUFFER_TYPE_RANGE_SIZE] = 
+	{
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+	};
+
+	return theUsageFlags[bufferUseType];
+}

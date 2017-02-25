@@ -8,6 +8,7 @@
 #include "VulkanPipeline.h"
 #include "RenderInstance.h"
 #include "VulkanBuffer.h"
+#include "ShaderModule.h"
 
 
 #pragma comment(linker, "/subsystem:windows")
@@ -996,16 +997,16 @@ void  MyEngine::CreateInitialData()
 
 	mImage = CreateEngineImage("Resources/jpeg_bad.jpg");
 
-	mShaders.push_back(std::make_shared<ShaderModule>(*mVulkanDevice, "Resources/vert.spv"));
-	mShaders.push_back(std::make_shared<ShaderModule>(*mVulkanDevice, "Resources/frag.spv"));
-	mShaders.push_back(std::make_shared<ShaderModule>(*mVulkanDevice, "Resources/red.spv"));
+	mShaders.push_back(CreateShaderModule("Resources/vert.spv"));
+	mShaders.push_back(CreateShaderModule("Resources/frag.spv"));
+	mShaders.push_back(CreateShaderModule("Resources/red.spv"));
 
 	EngineLog("Hello");
 
-	mPipeline = std::make_shared<VulkanPipeline>(*mVulkanDevice, *mRenderPasses[0], mShaders[0], mShaders[1]);
-	mPipeline2 = std::make_shared<VulkanPipeline>(*mVulkanDevice, *mRenderPasses[0], mShaders[0], mShaders[2]);
-	mRenderInstance = std::make_shared<RenderInstance>(*mVulkanDevice, mPipeline, mImage->getVulkanImage());
-	mRenderInstance2 = std::make_shared<RenderInstance>(*mVulkanDevice, mPipeline2, mImage->getVulkanImage());
+	mPipeline = CreatePipeline(*mRenderPasses[0], mShaders[0], mShaders[1]);
+	mPipeline2 = CreatePipeline(*mRenderPasses[0], mShaders[0], mShaders[2]);
+	mRenderInstance = CreateRenderInstance(mPipeline, mImage);
+	mRenderInstance2 = CreateRenderInstance( mPipeline2, mImage);
 
 	
 	std::shared_ptr<VulkanBuffer> drawbuffer = VulkanBuffer::SetUpVertexBuffer(*mVulkanDevice);
@@ -1024,4 +1025,44 @@ void  MyEngine::CreateInitialData()
 	mRenderInstance->SetDraw(theIndexDraw);
 	mRenderInstance2->SetDraw(theIndexDraw);
 	
+}
+
+
+
+
+
+std::shared_ptr<ShaderModule> MyEngine::CreateShaderModule(std::string shaderFile)
+{
+	return	std::make_shared<ShaderModule>(*mVulkanDevice, shaderFile);
+}
+
+
+
+
+
+std::shared_ptr<VulkanPipeline> MyEngine::CreatePipeline(
+	VulkanRenderPass& theRenderPass,
+	std::shared_ptr<ShaderModule> vert,
+	std::shared_ptr<ShaderModule> frag )
+{
+	return std::make_shared<VulkanPipeline>(*mVulkanDevice, *mRenderPasses[0], vert, frag);
+}
+
+
+
+
+
+std::shared_ptr<RenderInstance> MyEngine::CreateRenderInstance(
+	std::shared_ptr<VulkanPipeline> thePipeline,
+	EngineImage* theImage)
+{
+	return std::make_shared<RenderInstance>(*mVulkanDevice, thePipeline, theImage->getVulkanImage());
+}
+
+
+
+
+std::shared_ptr<VulkanBuffer> MyEngine::CreateVulkanBuffer(BufferType bufferType, size_t bufferSize)
+{
+	return std::make_shared<VulkanBuffer>(*mVulkanDevice, bufferType, bufferSize, true);
 }

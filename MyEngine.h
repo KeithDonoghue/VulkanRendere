@@ -2,8 +2,9 @@
 #define MY_ENGINE_HDR 1
 
 #include "ApiUsageHeader.h"
-#include "ShaderModule.h"
 #include "EngineImage.h"
+
+#include "VulkanBuffer.h"
 
 #include "Windows.h"
 
@@ -20,6 +21,7 @@ class Swapchain;
 class VulkanDevice;
 class VulkanRenderPass;
 class VulkanPipeline;
+class ShaderModule;
 class RenderInstance;
 class VulkanBuffer;
 
@@ -59,7 +61,14 @@ public:
 
 
 	void  CreateRenderTargets(int, int, uint32_t);
-	void  MyEngine::CreateInitialData();
+	void  CreateInitialData();
+
+	std::shared_ptr<ShaderModule> CreateShaderModule(std::string);
+	std::shared_ptr<VulkanPipeline> CreatePipeline(VulkanRenderPass&, std::shared_ptr<ShaderModule>, std::shared_ptr<ShaderModule>);
+	std::shared_ptr<RenderInstance> CreateRenderInstance(std::shared_ptr<VulkanPipeline>, EngineImage*);
+
+	std::shared_ptr<VulkanBuffer> CreateVulkanBuffer(BufferType, size_t);
+
 
 	EngineImage * CreateEngineImage(std::string);
 	void SetImage(EngineImage&);

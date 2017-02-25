@@ -58,7 +58,8 @@ mCreatedStandardView(false)
 
 	ClearImage(1.0f);
 
-	mStagingBuffer = VulkanBuffer::CreateStagingBuffer(*mDevice, x*y * 4);
+	mStagingBuffer = std::make_shared<VulkanBuffer>(*mDevice, BufferType::BUFFER_TYPE_STAGING,  x*y * 4);
+
 	mStagingBuffer->LoadBufferData(data, x*y * 4);
 
 	stbi_image_free(data);
