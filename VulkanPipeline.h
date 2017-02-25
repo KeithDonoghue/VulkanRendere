@@ -27,6 +27,7 @@ public:
 	void CreatePipelineLayout(VulkanRenderPass&, ShaderModule&, ShaderModule&);
 
 private:
+	std::shared_ptr<ShaderModule> mVert, mFrag;
 	VkDescriptorSetLayout mSetLayout;
 	VkDescriptorSet mDescSet;
 	VkPipeline m_TheVulkanPipeline;

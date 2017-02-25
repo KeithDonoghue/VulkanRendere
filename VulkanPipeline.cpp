@@ -12,7 +12,9 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice,
 	VulkanRenderPass& theRenderPass, 
 	std::shared_ptr<ShaderModule> vert, 
 	std::shared_ptr<ShaderModule> frag) :
-mDevice(theDevice)
+mDevice(theDevice),
+mVert(vert),
+mFrag(frag)
 {
 	CreatePipelineLayout(theRenderPass, *vert, *frag);
 
