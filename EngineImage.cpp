@@ -1,4 +1,3 @@
-#include "MyEngine.h"
 #include "EngineImage.h"
 #include "VulkanImage.h"
 
