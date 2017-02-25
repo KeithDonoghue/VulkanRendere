@@ -4,8 +4,13 @@
 #include "RenderInstance.h"
 #include "VulkanImage.h"
 #include "VulkanRenderPass.h"
-
 #include "VulkanBuffer.h"
+
+
+
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
 
 
 
@@ -67,9 +72,6 @@ void  ForwardRender::CreateInitialData()
 	CreateVertexBuffer();
 	CreateVertexIndexBuffer();
 	CreateIndexBuffer();
-		
-	mIndexbuffer->DoTheImportThing("Resources/cube.dae");
-
 
 	VertexDraw	theDraw(6, 1, 0, 0, mDrawbuffer);
 	IndexDraw	theIndexDraw(36, 2, 0, 0, 0, mIndexDrawbuffer, mIndexbuffer);
@@ -144,6 +146,27 @@ void ForwardRender::CreateIndexBuffer()
 
 
 
+void VulkanBuffer::DoTheImportThing(const std::string& pFile)
+{
+	// Create an instance of the Importer class
+	Assimp::Importer importer;
+
+	// And have it read the given file with some example postprocessing
+	// Usually - if speed is not the most important aspect for you - you'll 
+	// propably to request more postprocessing than we do in this example.
+	const aiScene* scene = importer.ReadFile(pFile,
+		aiProcess_CalcTangentSpace |
+		aiProcess_Triangulate |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_SortByPType);
+
+	EngineLog("HasAnimations: ", scene->HasAnimations());
+	EngineLog("HasCameras: ", scene->HasCameras());
+	EngineLog("HasLights: ", scene->HasLights());
+	EngineLog("HasMaterials ", scene->HasMaterials());
+	EngineLog("HasMeshes: ", scene->HasMeshes());
+	EngineLog("HasTextures: ", scene->HasTextures());
+}
 
 
 

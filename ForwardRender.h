@@ -24,6 +24,7 @@ public:
 	void CreateVertexIndexBuffer();
 	void CreateIndexBuffer();
 	void TakeInput(unsigned int);
+	void DoTheImportThing(const std::string& pFile);
 
 	void SetUpTargets();
 	void DoRender();

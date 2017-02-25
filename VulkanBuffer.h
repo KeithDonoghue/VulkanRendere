@@ -27,7 +27,6 @@ public:
 	void            BindMemory(bool mappable = true);
 	void            LoadBufferData(const void *, uint32_t size);
 	void            CopyFullBuffer(VulkanBuffer&);
-	void            DoTheImportThing(const std::string& pFile);
 
 	VkBufferUsageFlagBits   getUsage();
 	VkBufferUsageFlagBits   getUsage(BufferType);
