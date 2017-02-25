@@ -263,12 +263,12 @@ VkBufferUsageFlagBits VulkanBuffer::getUsage()
 
 VkBufferUsageFlagBits VulkanBuffer::getUsage(BufferType bufferUseType)
 {
-	static VkBufferUsageFlagBits theUsageFlags[BufferType::BUFFER_TYPE_RANGE_SIZE] = 
+	static VkBufferUsageFlagBits theUsageFlags[static_cast<int>(BufferType::BUFFER_TYPE_RANGE_SIZE)] = 
 	{
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 	};
 
-	return theUsageFlags[bufferUseType];
+	return theUsageFlags[static_cast<int>(bufferUseType)];
 }

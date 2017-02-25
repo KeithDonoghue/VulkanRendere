@@ -75,6 +75,7 @@
     <ClInclude Include="DescriptorPool.h" />
     <ClInclude Include="EngineImage.h" />
     <ClInclude Include="EngineLogging.h" />
+    <ClInclude Include="ForwardRender.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="ImageLoader.h" />
     <ClInclude Include="RenderInstance.h" />
@@ -99,6 +100,7 @@
     <ClCompile Include="DescriptorPool.cpp" />
     <ClCompile Include="EngineImage.cpp" />
     <ClCompile Include="EngineLogging.cpp" />
+    <ClCompile Include="ForwardRender.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="RenderInstance.cpp" />
     <ClCompile Include="ShaderModule.cpp" />

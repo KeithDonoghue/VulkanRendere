@@ -8,8 +8,14 @@ class VulkanDevice;
 
 class EngineImage {
 public:
+	EngineImage(){}
 	EngineImage(VulkanDevice *,std::string);
+	EngineImage(VulkanImage*);
 	~EngineImage();
+	void setImage(VulkanImage* theImage){
+		mVulkanImage = theImage;
+	}
+
 	VulkanImage * getVulkanImage(){
 		return mVulkanImage;
 	}

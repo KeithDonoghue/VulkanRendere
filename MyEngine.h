@@ -3,9 +3,7 @@
 
 #include "ApiUsageHeader.h"
 #include "EngineImage.h"
-#include "VulkanImage.h"
 
-#include "VulkanBuffer.h"
 
 #include "Windows.h"
 
@@ -17,6 +15,10 @@
 #include <atomic>
 #include <memory>
 
+enum class BufferType;
+enum class ImageType;
+
+class ForwardRender;
 class EngineWindow;
 class Swapchain;
 class VulkanDevice;
@@ -103,19 +105,8 @@ private:
 	Swapchain * m_TheSwapchain;
 	VulkanDevice *  mVulkanDevice;
 
-	std::vector<VulkanImage*> mDepthImages;
-	std::vector<VulkanImage*> mColourImages;
-	std::vector<VulkanRenderPass*> mRenderPasses;
 
-	VulkanImage * mRenderTarget;
-	VulkanRenderPass * mCurrentRenderPass;
-
-
-	std::vector<std::shared_ptr<ShaderModule>> mShaders;
-	EngineImage * mImage;
-
-	std::shared_ptr<VulkanPipeline> mPipeline, mPipeline2;
-	std::shared_ptr<RenderInstance> mRenderInstance, mRenderInstance2;
+	std::unique_ptr<ForwardRender> mRender;
 
 	int mWindowWidth, mWindowHeight;
 

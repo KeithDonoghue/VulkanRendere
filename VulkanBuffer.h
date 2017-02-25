@@ -6,7 +6,8 @@
 
 #include <memory>
 
-typedef enum BufferType {
+typedef enum class BufferType 
+{
 	BUFFER_TYPE_INDEX = 0,
 	BUFFER_TYPE_VERTEX = 1,
 	BUFFER_TYPE_STAGING = 2,

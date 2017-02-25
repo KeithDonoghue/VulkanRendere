@@ -9,7 +9,7 @@
 #include "RenderInstance.h"
 #include "VulkanBuffer.h"
 #include "ShaderModule.h"
-
+#include "ForwardRender.h"
 
 #pragma comment(linker, "/subsystem:windows")
 #include <Windows.h>
@@ -226,25 +226,7 @@ MyEngine::~MyEngine()
 	delete m_TheSwapchain;
 	delete m_TheWindow;
 
-	mPipeline.reset();
-	mPipeline2.reset();
-
-	mRenderInstance.reset();
-	mRenderInstance2.reset();
-
-	for (auto it : mColourImages)
-		delete it;
-
-	for (auto it : mDepthImages)
-		delete it;
-
-	for (auto it : mRenderPasses)
-		delete it;
-
-	delete mImage;
-
-	for (auto & it : mShaders)
-		it.reset();
+	mRender.reset();
 
 	delete mVulkanDevice;
 
@@ -884,8 +866,9 @@ void MyEngine::SpawnUpdateThread()
 
 void MyEngine::Run()
 {
-	CreateRenderTargets(mWindowWidth, mWindowHeight, m_TheSwapchain->getNumImages());
-	CreateInitialData();
+	mRender = std::make_unique<ForwardRender>(this);
+	mRender->CreateRenderTargets(mWindowWidth, mWindowHeight, m_TheSwapchain->getNumImages());
+	mRender->CreateInitialData();
 
 	while (!mFinish)
 	{
@@ -902,16 +885,8 @@ void MyEngine::Update()
 {	
 	if (mVulkanDevice->BeginFrame())
 	{
-		SetUpTargets();
-//		mVulkanDevice->DoRendering();
-		mRenderTarget->ClearImage(1.0f);
-		mRenderTarget->BlitFullImage(*mImage->getVulkanImage());
-
-		mRenderInstance->Draw(*mCurrentRenderPass);
-
-		mVulkanDevice->SetPresImage(mRenderTarget);
+		mRender->DoRender();
 		mVulkanDevice->Present();
-
 	}
 }
 
@@ -919,40 +894,9 @@ void MyEngine::Update()
 
 
 
-void MyEngine::SetUpTargets()
+void MyEngine::TakeInput(unsigned int key)
 {
-	static uint32_t nextRenderTarget = 0;
-
-	mRenderTarget = mColourImages[nextRenderTarget];
-	mCurrentRenderPass = mRenderPasses[nextRenderTarget];
-	nextRenderTarget++;
-
-	if (nextRenderTarget == 4)
-		nextRenderTarget = 0;
-}
-
-
-
-void MyEngine::TakeInput(unsigned int keyPress)
-{
-	EngineLog("key: ", keyPress);
-	if (keyPress == 65)
-		mRenderInstance->ChangeWorldPosition(1.0f, 0.0f, 0.0f);
-
-	if (keyPress == 66)
-		mRenderInstance->ChangeWorldPosition(-1.0f, 0.0f, 0.0f);
-
-	if (keyPress == 67)
-		mRenderInstance->ChangeWorldPosition(0.0f, 0.0f, 1.0f);
-
-	if (keyPress == 68)
-		mRenderInstance->ChangeWorldPosition(0.0f, 0.0f, -1.0f);
-
-	if (keyPress == 37)
-		mRenderInstance->ChangeWorldPosition(0.0f, -1.0f, 0.0f);
-
-	if (keyPress == 39)
-		mRenderInstance->ChangeWorldPosition(0.0f, 1.0f, 0.0f);
+	mRender->TakeInput(key);
 }
 
 
@@ -977,19 +921,6 @@ void MyEngine::SetImage(EngineImage& theImage)
 
 
 
-void  MyEngine::CreateRenderTargets(int width, int height, uint32_t numImages)
-{
-	for (uint32_t i = 0; i < numImages; i++)
-	{
-		mDepthImages.emplace_back(CreateVulkanImage(width, height, ImageType::VULKAN_IMAGE_DEPTH));
-		mColourImages.emplace_back(CreateVulkanImage(width, height, ImageType::VULKAN_IMAGE_COLOR_RGBA8));
-		mRenderPasses.emplace_back(CreateVulkanRenderPass(*mDepthImages[i], *mColourImages[i]));
-	}
-}
-
-
-
-
 
 VulkanImage * MyEngine::CreateVulkanImage(uint32_t  width, uint32_t height, ImageType theType)
 {
@@ -1009,44 +940,6 @@ VulkanRenderPass *	MyEngine::CreateVulkanRenderPass(VulkanImage& image1, VulkanI
 
 
 
-void  MyEngine::CreateInitialData()
-{
-
-	mImage = CreateEngineImage("Resources/jpeg_bad.jpg");
-
-	mShaders.push_back(CreateShaderModule("Resources/vert.spv"));
-	mShaders.push_back(CreateShaderModule("Resources/frag.spv"));
-	mShaders.push_back(CreateShaderModule("Resources/red.spv"));
-
-	EngineLog("Hello");
-
-	mPipeline = CreatePipeline(*mRenderPasses[0], mShaders[0], mShaders[1]);
-	mPipeline2 = CreatePipeline(*mRenderPasses[0], mShaders[0], mShaders[2]);
-	mRenderInstance = CreateRenderInstance(mPipeline, mImage);
-	mRenderInstance2 = CreateRenderInstance( mPipeline2, mImage);
-
-	
-	std::shared_ptr<VulkanBuffer> drawbuffer = VulkanBuffer::SetUpVertexBuffer(*mVulkanDevice);
-	std::shared_ptr<VulkanBuffer> indexDrawbuffer = VulkanBuffer::SetUpVertexIndexBuffer(*mVulkanDevice);
-	std::shared_ptr<VulkanBuffer> indexbuffer = VulkanBuffer::SetUpIndexBuffer(*mVulkanDevice);
-
-	indexbuffer->DoTheImportThing("Resources/cube.dae");
-
-
-	VertexDraw	theDraw(6, 1, 0, 0, drawbuffer);
-	IndexDraw	theIndexDraw(36, 2, 0, 0, 0, indexDrawbuffer, indexbuffer);
-
-	mRenderInstance->SetDraw(theDraw);
-	mRenderInstance2->SetDraw(theDraw);
-
-	mRenderInstance->SetDraw(theIndexDraw);
-	mRenderInstance2->SetDraw(theIndexDraw);
-	
-}
-
-
-
-
 
 std::shared_ptr<ShaderModule> MyEngine::CreateShaderModule(std::string shaderFile)
 {
@@ -1062,7 +955,7 @@ std::shared_ptr<VulkanPipeline> MyEngine::CreatePipeline(
 	std::shared_ptr<ShaderModule> vert,
 	std::shared_ptr<ShaderModule> frag )
 {
-	return std::make_shared<VulkanPipeline>(*mVulkanDevice, *mRenderPasses[0], vert, frag);
+	return std::make_shared<VulkanPipeline>(*mVulkanDevice, theRenderPass, vert, frag);
 }
 
 
