@@ -70,9 +70,9 @@ public:
 	std::shared_ptr<VulkanPipeline> CreatePipeline(VulkanRenderPass&, std::shared_ptr<ShaderModule>, std::shared_ptr<ShaderModule>);
 	std::shared_ptr<RenderInstance> CreateRenderInstance(std::shared_ptr<VulkanPipeline>, EngineImage*);
 
-	std::shared_ptr<VulkanBuffer>	CreateVulkanBuffer(BufferType, size_t);
-	VulkanImage *					CreateVulkanImage(uint32_t, uint32_t, ImageType);
-	VulkanRenderPass *				CreateVulkanRenderPass(VulkanImage&, VulkanImage&);
+	std::shared_ptr<VulkanBuffer>		CreateVulkanBuffer(BufferType, size_t);
+	std::shared_ptr<VulkanImage>		CreateVulkanImage(uint32_t, uint32_t, ImageType);
+	std::shared_ptr<VulkanRenderPass>	CreateVulkanRenderPass(VulkanImage&, VulkanImage&);
 
 
 	EngineImage * CreateEngineImage(std::string);

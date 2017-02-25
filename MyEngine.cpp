@@ -922,18 +922,18 @@ void MyEngine::SetImage(EngineImage& theImage)
 
 
 
-VulkanImage * MyEngine::CreateVulkanImage(uint32_t  width, uint32_t height, ImageType theType)
+std::shared_ptr<VulkanImage> MyEngine::CreateVulkanImage(uint32_t  width, uint32_t height, ImageType theType)
 {
-	return new VulkanImage(mVulkanDevice, width, height, theType);
+	return std::make_shared<VulkanImage>(mVulkanDevice, width, height, theType);
 }
 
 
 
 
 
-VulkanRenderPass *	MyEngine::CreateVulkanRenderPass(VulkanImage& image1, VulkanImage& image2)
+std::shared_ptr<VulkanRenderPass>	MyEngine::CreateVulkanRenderPass(VulkanImage& image1, VulkanImage& image2)
 {
-	return new VulkanRenderPass(*mVulkanDevice, image1, image2);
+	return std::make_shared<VulkanRenderPass>(*mVulkanDevice, image1, image2);
 }
 
 

@@ -32,12 +32,12 @@ public:
 private:
 	MyEngine * mRenderEngine;
 
-	std::vector<VulkanImage*> mDepthImages;
-	std::vector<VulkanImage*> mColourImages;
-	std::vector<VulkanRenderPass*> mRenderPasses;
+	std::vector<std::shared_ptr<VulkanImage>> mDepthImages;
+	std::vector<std::shared_ptr<VulkanImage>> mColourImages;
+	std::vector<std::shared_ptr<VulkanRenderPass>> mRenderPasses;
 
-	EngineImage * mRenderTarget;
-	VulkanRenderPass * mCurrentRenderPass;
+	std::shared_ptr<EngineImage> mRenderTarget;
+	std::shared_ptr<VulkanRenderPass> mCurrentRenderPass;
 
 	std::shared_ptr<VulkanBuffer> mDrawbuffer;
 	std::shared_ptr<VulkanBuffer> mIndexDrawbuffer;

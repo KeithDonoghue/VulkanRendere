@@ -16,7 +16,7 @@
 
 ForwardRender::ForwardRender(MyEngine * theEngine)
 {
-	mRenderTarget = new EngineImage;
+	mRenderTarget = std::make_shared<EngineImage>();
 	mRenderEngine = theEngine;
 }
 
@@ -26,15 +26,6 @@ ForwardRender::ForwardRender(MyEngine * theEngine)
 
 ForwardRender::~ForwardRender()
 {
-	for (auto it : mColourImages)
-		delete it;
-
-	for (auto it : mDepthImages)
-		delete it;
-
-	for (auto it : mRenderPasses)
-		delete it;
-
 	delete mImage;
 }
 
@@ -64,7 +55,7 @@ void  ForwardRender::CreateInitialData()
 	mShaders.push_back(mRenderEngine->CreateShaderModule("Resources/red.spv"));
 
 
-	mPipeline = mRenderEngine-> CreatePipeline(*mRenderPasses[0], mShaders[0], mShaders[1]);
+	mPipeline = mRenderEngine->CreatePipeline(*mRenderPasses[0], mShaders[0], mShaders[1]);
 	mPipeline2 = mRenderEngine->CreatePipeline(*mRenderPasses[0], mShaders[0], mShaders[2]);
 	mRenderInstance = mRenderEngine->CreateRenderInstance(mPipeline, mImage);
 	mRenderInstance2 = mRenderEngine->CreateRenderInstance(mPipeline2, mImage);
@@ -146,7 +137,7 @@ void ForwardRender::CreateIndexBuffer()
 
 
 
-void VulkanBuffer::DoTheImportThing(const std::string& pFile)
+void ForwardRender::DoTheImportThing(const std::string& pFile)
 {
 	// Create an instance of the Importer class
 	Assimp::Importer importer;

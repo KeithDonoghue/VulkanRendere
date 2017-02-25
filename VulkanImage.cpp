@@ -34,7 +34,8 @@ mWidth(width),
 mHeight(height),
 mDevice(theDevice),
 mType(type),
-mCreatedStandardView(false)
+mCreatedStandardView(false),
+mSystemManaged(false)
 {
 	Init();
 }
@@ -46,7 +47,8 @@ mCreatedStandardView(false)
 VulkanImage::VulkanImage(VulkanDevice * theDevice, std::string filename):
 mDevice(theDevice),
 mType(ImageType::VULKAN_IMAGE_COLOR_RGBA8),
-mCreatedStandardView(false)
+mCreatedStandardView(false),
+mSystemManaged(false)
 {
 	int x, y, n;
 	unsigned char * data = stbi_load(filename.c_str(), &x, &y, &n, 4);

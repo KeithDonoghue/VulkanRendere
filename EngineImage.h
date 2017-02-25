@@ -2,6 +2,7 @@
 #define VUKAN_IMAGE_HDR 1
 
 #include <string>
+#include <memory>
 
 class VulkanImage;
 class VulkanDevice;
@@ -11,16 +12,15 @@ public:
 	EngineImage(){}
 	EngineImage(VulkanDevice *,std::string);
 	EngineImage(VulkanImage*);
-	~EngineImage();
-	void setImage(VulkanImage* theImage){
+	
+    void setImage(std::shared_ptr<VulkanImage> theImage){
 		mVulkanImage = theImage;
 	}
-
 	VulkanImage * getVulkanImage(){
-		return mVulkanImage;
+		return mVulkanImage.get();
 	}
 private:
-	VulkanImage * mVulkanImage;
+	std::shared_ptr<VulkanImage> mVulkanImage;
 };
 
 #endif // VUKAN_IMAGE_HDR

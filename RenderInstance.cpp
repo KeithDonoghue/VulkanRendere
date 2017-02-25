@@ -5,7 +5,7 @@
 #include "CommandBuffer.h"
 #include "VulkanBuffer.h"
 
-
+#undef GLM_DEPTH_ZERO_TO_ONE
 #define GLM_DEPTH_ZERO_TO_ONE 1
 #include <glm/vec3.hpp> // glm::vec3
 #include <glm/vec4.hpp> // glm::vec4
