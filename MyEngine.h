@@ -67,7 +67,17 @@ public:
 	void  CreateInitialData();
 
 	std::shared_ptr<ShaderModule>	CreateShaderModule(std::string);
-	std::shared_ptr<VulkanPipeline> CreatePipeline(VulkanRenderPass&, std::shared_ptr<ShaderModule>, std::shared_ptr<ShaderModule>);
+	std::shared_ptr<VulkanPipeline> CreatePipeline(
+		VulkanRenderPass&, 
+		std::shared_ptr<ShaderModule>, 
+		std::shared_ptr<ShaderModule>);
+
+	std::shared_ptr<VulkanPipeline> CreatePipeline(
+		std::shared_ptr<VulkanPipeline>,
+		VulkanRenderPass&,
+		std::shared_ptr<ShaderModule>, 
+		std::shared_ptr<ShaderModule>);
+
 	std::shared_ptr<RenderInstance> CreateRenderInstance(std::shared_ptr<VulkanPipeline>, EngineImage*);
 
 	std::shared_ptr<VulkanBuffer>		CreateVulkanBuffer(BufferType, size_t);

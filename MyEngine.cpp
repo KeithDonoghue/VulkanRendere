@@ -961,6 +961,17 @@ std::shared_ptr<VulkanPipeline> MyEngine::CreatePipeline(
 
 
 
+std::shared_ptr<VulkanPipeline> MyEngine::CreatePipeline(
+	std::shared_ptr<VulkanPipeline> prevPipeline,
+	VulkanRenderPass& theRenderPass,
+	std::shared_ptr<ShaderModule> vert,
+	std::shared_ptr<ShaderModule> frag)
+{
+	return std::make_shared<VulkanPipeline>(*mVulkanDevice, *prevPipeline, theRenderPass, vert, frag);
+}
+
+
+
 
 std::shared_ptr<RenderInstance> MyEngine::CreateRenderInstance(
 	std::shared_ptr<VulkanPipeline> thePipeline,

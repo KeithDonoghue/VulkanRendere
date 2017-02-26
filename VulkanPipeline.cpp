@@ -6,65 +6,40 @@
 
 
 
-
-
-VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice, 
-	VulkanRenderPass& theRenderPass, 
-	std::shared_ptr<ShaderModule> vert, 
+VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice,
+	VulkanPipeline & parentPipeline,
+	VulkanRenderPass& theRenderPass,
+	std::shared_ptr<ShaderModule> vert,
 	std::shared_ptr<ShaderModule> frag) :
-mDevice(theDevice),
-mVert(vert),
-mFrag(frag)
+	mDevice(theDevice),
+	mVert(vert),
+	mFrag(frag),
+	mCreateInfo(parentPipeline.getCreateInfo())
 {
 	CreatePipelineLayout(theRenderPass, *vert, *frag);
+	stages = CreatePipelineShaderState(*vert, *frag);
+
+	mCreateInfo.stageCount = stages.size();
+	mCreateInfo.pStages = stages.data();
+
+	Init();
+}
 
 
-	
-	VkPipelineShaderStageCreateInfo stageCreateInfo = {};
-	stageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	stageCreateInfo.pNext = nullptr;
-	stageCreateInfo.flags = 0; // reserved for future use.
-	stageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	stageCreateInfo.module = vert->getVkShaderModule() ;
-	stageCreateInfo.pName = "main";
-	stageCreateInfo.pSpecializationInfo = nullptr;
 
-	std::vector<VkPipelineShaderStageCreateInfo> stages;
-	stages.push_back(stageCreateInfo);
+VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice,
+	VulkanRenderPass& theRenderPass,
+	std::shared_ptr<ShaderModule> vert,
+	std::shared_ptr<ShaderModule> frag) :
+	mDevice(theDevice),
+	mVert(vert),
+	mFrag(frag),
+	mCreateInfo{}
+{
+	CreatePipelineLayout(theRenderPass, *vert, *frag);
+	stages = CreatePipelineShaderState(*vert, *frag);
 
 
-	stageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	stageCreateInfo.module = frag->getVkShaderModule();
-
-	stages.push_back(stageCreateInfo);
-
-	
-
-	// Two stages: vs and fs
-	VkPipelineShaderStageCreateInfo shaderStages[2];
-	memset(&shaderStages, 0, 2 * sizeof(VkPipelineShaderStageCreateInfo));
-
-	shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-	shaderStages[0].module = vert->getVkShaderModule();
-	shaderStages[0].pName = "main";
-
-	shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	shaderStages[1].module = frag->getVkShaderModule();
-	shaderStages[1].pName = "main";
-
-	VkPipelineVertexInputStateCreateInfo VIScreateInfo = {};
-	VkPipelineInputAssemblyStateCreateInfo IAcreateInfo = {};
-	VkPipelineTessellationStateCreateInfo TScreateInfo = {};
-	VkPipelineViewportStateCreateInfo VScreateInfo = {};
-	VkPipelineRasterizationStateCreateInfo RScreateInfo = {};
-	VkPipelineMultisampleStateCreateInfo MScreateInfo = {};
-	VkPipelineDepthStencilStateCreateInfo DSScreateInfo = {};
-	VkPipelineColorBlendStateCreateInfo CBScreateInfo = {};
-	VkPipelineDynamicStateCreateInfo DScreateInfo = {};
-
-	VkDynamicState dynamicStates[2];
 	memset(dynamicStates, 0, sizeof(dynamicStates));
 	dynamicStates[0] = VK_DYNAMIC_STATE_VIEWPORT;
 	dynamicStates[1] = VK_DYNAMIC_STATE_SCISSOR;
@@ -79,12 +54,12 @@ mFrag(frag)
 	createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	createInfo.pNext = nullptr;
 	createInfo.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
-	createInfo.stageCount = 2;
-	createInfo.pStages = shaderStages;
+	createInfo.stageCount = stages.size();
+	createInfo.pStages = stages.data();
 	createInfo.pVertexInputState = &VIScreateInfo;
 	createInfo.pInputAssemblyState = &IAcreateInfo;
 	createInfo.pTessellationState = nullptr; // &TScreateInfo;
-	createInfo.pViewportState =  CreateViewportState( &VScreateInfo);
+	createInfo.pViewportState = CreateViewportState(&VScreateInfo);
 	createInfo.pRasterizationState = CreateRasterisationState(&RScreateInfo);
 	createInfo.pMultisampleState = &MScreateInfo;
 	createInfo.pDepthStencilState = CreateDepthStencilState(&DSScreateInfo);
@@ -97,15 +72,14 @@ mFrag(frag)
 	createInfo.layout = mPipelineLayout;
 	createInfo.renderPass = theRenderPass.GetVkRenderPass();
 	createInfo.subpass = 0;
-	
+
 	// Vertex Input state
-	VkVertexInputBindingDescription VIBD = {};
 	VIBD.binding = 0;
 	VIBD.stride = 6 * sizeof(float);
 	VIBD.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-	std::vector<VkVertexInputAttributeDescription> VIAD(2);
 
+	VIAD.resize(2);
 	VIAD[0].location = 0;
 	VIAD[0].binding = 0;
 	VIAD[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -131,15 +105,14 @@ mFrag(frag)
 
 
 
-	
-	
+
+
 	//Multisample state
 	MScreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	MScreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	
+
 
 	//ColourBlend state
-	VkPipelineColorBlendAttachmentState attachState = {};
 	attachState.colorWriteMask = 0xF;
 	attachState.blendEnable = VK_FALSE;
 
@@ -147,15 +120,22 @@ mFrag(frag)
 	CBScreateInfo.attachmentCount = 1;
 	CBScreateInfo.pAttachments = &attachState;
 
-
-	VkResult result = vkCreateGraphicsPipelines(mDevice.getVkDevice(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &m_TheVulkanPipeline);
-	if (result != VK_SUCCESS)
-	{
-		EngineLog("Failed to create pipeline.");
-	}	
+	mCreateInfo = createInfo;
+	Init();
 }
 
 
+
+
+
+void VulkanPipeline::Init()
+{
+	VkResult result = vkCreateGraphicsPipelines(mDevice.getVkDevice(), VK_NULL_HANDLE, 1, &mCreateInfo, nullptr, &m_TheVulkanPipeline);
+	if (result != VK_SUCCESS)
+	{
+		EngineLog("Failed to create pipeline.");
+	}
+}
 
 
 
@@ -215,18 +195,43 @@ VkPipelineRasterizationStateCreateInfo * VulkanPipeline::CreateRasterisationStat
 
 	//Rasterizer State
 	RScreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	RScreateInfo->polygonMode = VK_POLYGON_MODE_FILL;
+	RScreateInfo->polygonMode = VK_POLYGON_MODE_LINE;
 	RScreateInfo->cullMode = VK_CULL_MODE_NONE;
 	RScreateInfo->frontFace = VK_FRONT_FACE_CLOCKWISE;
 	RScreateInfo->depthClampEnable = VK_TRUE;
 	RScreateInfo->rasterizerDiscardEnable = VK_FALSE;
 	RScreateInfo->depthBiasEnable = VK_FALSE;
-	RScreateInfo->lineWidth = 1.0f;
+	RScreateInfo->lineWidth = 5.0f;
 
 	return RScreateInfo;
 }
 
 
+std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::CreatePipelineShaderState(
+	ShaderModule& vert, 
+	ShaderModule& frag)
+{
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+
+	VkPipelineShaderStageCreateInfo stageCreateInfo = {};
+	stageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	stageCreateInfo.pNext = nullptr;
+	stageCreateInfo.flags = 0; // reserved for future use.
+	stageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	stageCreateInfo.module = vert.getVkShaderModule();
+	stageCreateInfo.pName = "main";
+	stageCreateInfo.pSpecializationInfo = nullptr;
+
+	shaderStages.push_back(stageCreateInfo);
+
+
+	stageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	stageCreateInfo.module = frag.getVkShaderModule();
+
+	shaderStages.push_back(stageCreateInfo);
+	
+	return shaderStages;
+}
 
 
 
