@@ -44,7 +44,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>D:\myCode\assimp-3.1.1_no_test_models\assimp-3.1.1\include;../../1.0.30.0/Include;D:/myCode/glm-0.9.8.4/glm/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;D:\myCode\assimp-3.1.1_no_test_models\assimp-3.1.1\include;../../1.0.30.0/Include;D:/myCode/glm-0.9.8.4/glm/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -59,7 +59,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>D:\myCode\assimp-3.1.1_no_test_models\assimp-3.1.1\include;..\..\1.0.30.0\Include;D:/myCode/glm-0.9.8.4/glm/;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;D:\myCode\assimp-3.1.1_no_test_models\assimp-3.1.1\include;..\..\1.0.30.0\Include;D:/myCode/glm-0.9.8.4/glm/;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -69,52 +69,54 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ApiUsageHeader.h" />
-    <ClInclude Include="CommandBuffer.h" />
-    <ClInclude Include="CommandPool.h" />
-    <ClInclude Include="DescriptorPool.h" />
-    <ClInclude Include="EngineImage.h" />
-    <ClInclude Include="EngineLogging.h" />
-    <ClInclude Include="ForwardRender.h" />
-    <ClInclude Include="FrameBuffer.h" />
-    <ClInclude Include="ImageLoader.h" />
-    <ClInclude Include="RenderInstance.h" />
-    <ClInclude Include="ShaderModule.h" />
-    <ClInclude Include="stb_image.h" />
-    <ClInclude Include="VertexBuffer.h" />
-    <ClInclude Include="VulkanBuffer.h" />
-    <ClInclude Include="VulkanDevice.h" />
-    <ClInclude Include="MyEngine.h" />
-    <ClInclude Include="Swapchain.h" />
-    <ClInclude Include="VulkanEvent.h" />
-    <ClInclude Include="VulkanImage.h" />
-    <ClInclude Include="VulkanMemoryManager.h" />
-    <ClInclude Include="VulkanPipeline.h" />
-    <ClInclude Include="VulkanRenderPass.h" />
-    <ClInclude Include="WindowsWindow.h" />
+    <ClCompile Include="src\ApiUsageHeaderFunctions.cpp" />
+    <ClCompile Include="src\CommandBuffer.cpp" />
+    <ClCompile Include="src\CommandPool.cpp" />
+    <ClCompile Include="src\DescriptorPool.cpp" />
+    <ClCompile Include="src\EngineImage.cpp" />
+    <ClCompile Include="src\EngineLogging.cpp" />
+    <ClCompile Include="src\EngineRenderPass.cpp" />
+    <ClCompile Include="src\ForwardRender.cpp" />
+    <ClCompile Include="src\FrameBuffer.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\MyEngine.cpp" />
+    <ClCompile Include="src\RenderInstance.cpp" />
+    <ClCompile Include="src\RenderPass.cpp" />
+    <ClCompile Include="src\ShaderModule.cpp" />
+    <ClCompile Include="src\Swapchain.cpp" />
+    <ClCompile Include="src\VertexBuffer.cpp" />
+    <ClCompile Include="src\VulkanBuffer.cpp" />
+    <ClCompile Include="src\VulkanDevice.cpp" />
+    <ClCompile Include="src\VulkanImage.cpp" />
+    <ClCompile Include="src\VulkanMemoryManager.cpp" />
+    <ClCompile Include="src\VulkanPipeline.cpp" />
+    <ClCompile Include="src\VulkanRenderPass.cpp" />
+    <ClCompile Include="src\WindowsWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ApiUsageHeaderFunctions.cpp" />
-    <ClCompile Include="CommandBuffer.cpp" />
-    <ClCompile Include="CommandPool.cpp" />
-    <ClCompile Include="DescriptorPool.cpp" />
-    <ClCompile Include="EngineImage.cpp" />
-    <ClCompile Include="EngineLogging.cpp" />
-    <ClCompile Include="ForwardRender.cpp" />
-    <ClCompile Include="FrameBuffer.cpp" />
-    <ClCompile Include="RenderInstance.cpp" />
-    <ClCompile Include="ShaderModule.cpp" />
-    <ClCompile Include="VertexBuffer.cpp" />
-    <ClCompile Include="VulkanBuffer.cpp" />
-    <ClCompile Include="VulkanDevice.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="MyEngine.cpp" />
-    <ClCompile Include="Swapchain.cpp" />
-    <ClCompile Include="VulkanImage.cpp" />
-    <ClCompile Include="VulkanMemoryManager.cpp" />
-    <ClCompile Include="VulkanPipeline.cpp" />
-    <ClCompile Include="VulkanRenderPass.cpp" />
-    <ClCompile Include="WindowsWindow.cpp" />
+    <ClInclude Include="include\ApiUsageHeader.h" />
+    <ClInclude Include="include\CommandBuffer.h" />
+    <ClInclude Include="include\CommandPool.h" />
+    <ClInclude Include="include\DescriptorPool.h" />
+    <ClInclude Include="include\EngineImage.h" />
+    <ClInclude Include="include\EngineLogging.h" />
+    <ClInclude Include="include\ForwardRender.h" />
+    <ClInclude Include="include\FrameBuffer.h" />
+    <ClInclude Include="include\ImageLoader.h" />
+    <ClInclude Include="include\MyEngine.h" />
+    <ClInclude Include="include\RenderInstance.h" />
+    <ClInclude Include="include\RenderPass.h" />
+    <ClInclude Include="include\ShaderModule.h" />
+    <ClInclude Include="include\stb_image.h" />
+    <ClInclude Include="include\Swapchain.h" />
+    <ClInclude Include="include\VertexBuffer.h" />
+    <ClInclude Include="include\VulkanBuffer.h" />
+    <ClInclude Include="include\VulkanDevice.h" />
+    <ClInclude Include="include\VulkanImage.h" />
+    <ClInclude Include="include\VulkanMemoryManager.h" />
+    <ClInclude Include="include\VulkanPipeline.h" />
+    <ClInclude Include="include\VulkanRenderPass.h" />
+    <ClInclude Include="include\WindowsWindow.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
