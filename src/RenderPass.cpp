@@ -1,6 +1,2 @@
-#ifndef RENDER_PASS_HPP
-#define RENDER_PASS_HPP 1
+#include "RenderPass.h"
 
-
-
-#endif // RENDER_PASS_HPP

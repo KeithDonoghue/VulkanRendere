@@ -62,12 +62,16 @@ void ForwardRender::CreatePipelines()
 	mPipeline->Init();
 
 	mPipeline2 = mRenderEngine->CreatePipeline(mPipeline, *mRenderPasses[0], mShaders[0], mShaders[1]);
-	
+
 	VkGraphicsPipelineCreateInfo & createinfo = mPipeline2->getCreateInfo();
 	VkPipelineRasterizationStateCreateInfo tempRSCreateInfo = *createinfo.pRasterizationState;
 	tempRSCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
 	createinfo.pRasterizationState = &tempRSCreateInfo;
 	mPipeline2->Init();
+
+	mPipeline3 = mRenderEngine->CreatePipeline(mPipeline2, *mRenderPasses[0], mShaders[0], mShaders[1]);
+	mPipeline3->Init();
+
 }
 
 
@@ -85,9 +89,6 @@ void  ForwardRender::CreateInitialData()
 
 	CreatePipelines();
 
-	mRenderInstance = mRenderEngine->CreateRenderInstance(mPipeline, mImage);
-	mRenderInstance2 = mRenderEngine->CreateRenderInstance(mPipeline2, mImage);
-
 	CreateVertexBuffer();
 	CreateVertexIndexBuffer();
 	CreateIndexBuffer();
@@ -95,14 +96,25 @@ void  ForwardRender::CreateInitialData()
 	VertexDraw	theDraw(6, 1, 0, 0, mDrawbuffer);
 	IndexDraw	theIndexDraw(36, 2, 0, 0, 0, mIndexDrawbuffer, mIndexbuffer);
 
-	mRenderInstance->SetDraw(theDraw);
-	mRenderInstance2->SetDraw(theDraw);
+	std::shared_ptr<RenderInstance> renderInstance = mRenderEngine->CreateRenderInstance(mPipeline, mImage);
+	
+	renderInstance->SetDraw(theDraw);
+	renderInstance->SetDraw(theIndexDraw);
+	mDrawQueue.push_back(renderInstance);
 
-	mRenderInstance->SetDraw(theIndexDraw);
-	mRenderInstance2->SetDraw(theIndexDraw);
 
-	mDrawQueue.push_back(mRenderInstance);
-	mDrawQueue.push_back(mRenderInstance2);
+	renderInstance = mRenderEngine->CreateRenderInstance(mPipeline2, mImage);
+	renderInstance->SetDraw(theDraw);
+	renderInstance->SetDraw(theIndexDraw);
+	mDrawQueue.push_back(renderInstance);
+
+
+	renderInstance = mRenderEngine->CreateRenderInstance(mPipeline3, mImage);
+	renderInstance->SetDraw(theDraw);
+	renderInstance->SetDraw(theIndexDraw);
+	mSecondDrawQueue.push_back(renderInstance);
+
+
 	DoTheImportThing("Resources/cube.dae");
 }
 
@@ -275,8 +287,31 @@ void ForwardRender::DoRender()
 	mRenderTarget->getVulkanImage()->ClearImage(1.0f);
 	mRenderTarget->getVulkanImage()->BlitFullImage(*mImage->getVulkanImage());
 
+	mCurrentRenderPass->Begin();
+
 	for (auto it : mDrawQueue)
 		it->Draw(*mCurrentRenderPass);
+
+	mCurrentRenderPass->End();
+
+	for (auto it : mSecondDrawQueue)
+	{
+		it->setSampleImage(mRenderTarget->getVulkanImage());
+	}
+
+	SetUpTargets();
+
+	mRenderTarget->getVulkanImage()->ClearImage(1.0f);
+	//mRenderTarget->getVulkanImage()->BlitFullImage(*mImage->getVulkanImage());
+
+	mCurrentRenderPass->Begin();
+
+	for (auto it : mSecondDrawQueue)
+	{
+		it->Draw(*mCurrentRenderPass);
+	}
+	
+	mCurrentRenderPass->End();
 
 	mRenderEngine->SetImage(*mRenderTarget);
 }

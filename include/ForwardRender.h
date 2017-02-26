@@ -56,10 +56,10 @@ private:
 	std::vector<std::shared_ptr<ShaderModule>> mShaders;
 	EngineImage * mImage;
 
-	std::shared_ptr<VulkanPipeline> mPipeline, mPipeline2;
-	std::shared_ptr<RenderInstance> mRenderInstance, mRenderInstance2;
+	std::shared_ptr<VulkanPipeline> mPipeline, mPipeline2, mPipeline3;
 
 	std::vector<std::shared_ptr<RenderInstance>> mDrawQueue;
+	std::vector<std::shared_ptr<RenderInstance>> mSecondDrawQueue;
 	float mZPosition;
 	float mXPosition;
 	float mRotation;

@@ -64,17 +64,11 @@ RenderInstance::~RenderInstance()
 
 void RenderInstance::Draw(VulkanRenderPass& theRenderPass)
 {
-
-	theRenderPass.Begin();
-
-
 	CommandBuffer * currentCommandBuffer = mDevice.GetCommandPool().GetCurrentCommandBuffer();
 	currentCommandBuffer->SetDrawState(theRenderPass, *mPipeline, *mImage, mSampler);
 	UpdateMVP();
 	UpdateRelModelMat();
 	currentCommandBuffer->Draw(mIndexDraw);
-
-	theRenderPass.End();
 }
 
 
