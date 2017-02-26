@@ -19,6 +19,7 @@ public:
 	~ForwardRender();
 	
 	void CreateRenderTargets(int, int, uint32_t);
+	void CreatePipelines();
 	void CreateInitialData();
 	void CreateVertexBuffer();
 	void CreateVertexIndexBuffer();
@@ -28,6 +29,7 @@ public:
 
 	void SetUpTargets();
 	void DoRender();
+
 
 private:
 	MyEngine * mRenderEngine;
@@ -48,6 +50,8 @@ private:
 
 	std::shared_ptr<VulkanPipeline> mPipeline, mPipeline2;
 	std::shared_ptr<RenderInstance> mRenderInstance, mRenderInstance2;
+
+	std::vector<std::shared_ptr<RenderInstance>> mDrawQueue;
 };
 
 #endif // FORWARD_RENDER_HPP

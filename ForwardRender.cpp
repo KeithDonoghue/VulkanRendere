@@ -5,6 +5,7 @@
 #include "VulkanImage.h"
 #include "VulkanRenderPass.h"
 #include "VulkanBuffer.h"
+#include "VulkanPipeline.h"
 
 
 
@@ -45,6 +46,26 @@ void  ForwardRender::CreateRenderTargets(int width, int height, uint32_t numImag
 
 
 
+
+
+void ForwardRender::CreatePipelines()
+{
+	mPipeline = mRenderEngine->CreatePipeline(*mRenderPasses[0], mShaders[0], mShaders[2]);
+	mPipeline->Init();
+
+	mPipeline2 = mRenderEngine->CreatePipeline(mPipeline, *mRenderPasses[0], mShaders[0], mShaders[1]);
+	
+	VkGraphicsPipelineCreateInfo & createinfo = mPipeline2->getCreateInfo();
+	VkPipelineRasterizationStateCreateInfo tempRSCreateInfo = *createinfo.pRasterizationState;
+	tempRSCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+	createinfo.pRasterizationState = &tempRSCreateInfo;
+	mPipeline2->Init();
+}
+
+
+
+
+
 void  ForwardRender::CreateInitialData()
 {
 
@@ -54,9 +75,8 @@ void  ForwardRender::CreateInitialData()
 	mShaders.push_back(mRenderEngine->CreateShaderModule("Resources/frag.spv"));
 	mShaders.push_back(mRenderEngine->CreateShaderModule("Resources/red.spv"));
 
+	CreatePipelines();
 
-	mPipeline = mRenderEngine->CreatePipeline(*mRenderPasses[0], mShaders[0], mShaders[1]);
-	mPipeline2 = mRenderEngine->CreatePipeline(*mRenderPasses[0], mShaders[0], mShaders[2]);
 	mRenderInstance = mRenderEngine->CreateRenderInstance(mPipeline, mImage);
 	mRenderInstance2 = mRenderEngine->CreateRenderInstance(mPipeline2, mImage);
 
@@ -72,7 +92,10 @@ void  ForwardRender::CreateInitialData()
 
 	mRenderInstance->SetDraw(theIndexDraw);
 	mRenderInstance2->SetDraw(theIndexDraw);
-	
+
+	mDrawQueue.push_back(mRenderInstance);
+	mDrawQueue.push_back(mRenderInstance2);
+	DoTheImportThing("Resources/cube.dae");
 }
 
 
@@ -166,23 +189,27 @@ void ForwardRender::DoTheImportThing(const std::string& pFile)
 void ForwardRender::TakeInput(unsigned int keyPress)
 {
 	EngineLog("key: ", keyPress);
-	if (keyPress == 65)
-		mRenderInstance->ChangeWorldPosition(1.0f, 0.0f, 0.0f);
 
-	if (keyPress == 66)
-		mRenderInstance->ChangeWorldPosition(-1.0f, 0.0f, 0.0f);
+	for (auto it : mDrawQueue)
+	{
+		if (keyPress == 65)
+			it->ChangeWorldPosition(1.0f, 0.0f, 0.0f);
 
-	if (keyPress == 67)
-		mRenderInstance->ChangeWorldPosition(0.0f, 0.0f, 1.0f);
+		if (keyPress == 66)
+			it->ChangeWorldPosition(-1.0f, 0.0f, 0.0f);
 
-	if (keyPress == 68)
-		mRenderInstance->ChangeWorldPosition(0.0f, 0.0f, -1.0f);
+		if (keyPress == 67)
+			it->ChangeWorldPosition(0.0f, 0.0f, 1.0f);
 
-	if (keyPress == 37)
-		mRenderInstance->ChangeWorldPosition(0.0f, -1.0f, 0.0f);
+		if (keyPress == 68)
+			it->ChangeWorldPosition(0.0f, 0.0f, -1.0f);
 
-	if (keyPress == 39)
-		mRenderInstance->ChangeWorldPosition(0.0f, 1.0f, 0.0f);
+		if (keyPress == 37)
+			it->ChangeWorldPosition(0.0f, -1.0f, 0.0f);
+
+		if (keyPress == 39)
+			it->ChangeWorldPosition(0.0f, 1.0f, 0.0f);
+	}
 }
 
 
@@ -207,12 +234,14 @@ void ForwardRender::SetUpTargets()
 
 void ForwardRender::DoRender()
 {
+
 	SetUpTargets();
-	//		mVulkanDevice->DoRendering();
+
 	mRenderTarget->getVulkanImage()->ClearImage(1.0f);
 	mRenderTarget->getVulkanImage()->BlitFullImage(*mImage->getVulkanImage());
 
-	mRenderInstance->Draw(*mCurrentRenderPass);
+	for (auto it : mDrawQueue)
+		it->Draw(*mCurrentRenderPass);
 
 	mRenderEngine->SetImage(*mRenderTarget);
 }

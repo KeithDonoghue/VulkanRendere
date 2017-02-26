@@ -21,8 +21,6 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice,
 
 	mCreateInfo.stageCount = stages.size();
 	mCreateInfo.pStages = stages.data();
-
-	Init();
 }
 
 
@@ -121,7 +119,6 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& theDevice,
 	CBScreateInfo.pAttachments = &attachState;
 
 	mCreateInfo = createInfo;
-	Init();
 }
 
 
