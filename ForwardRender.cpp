@@ -13,10 +13,18 @@
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
 
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
+
+
 
 
 ForwardRender::ForwardRender(MyEngine * theEngine)
 {
+	mZPosition = 0.0f;
+	mXPosition = 0.0f;
+	mRotation = 0.0f;
+	posDirty = true;
 	mRenderTarget = std::make_shared<EngineImage>();
 	mRenderEngine = theEngine;
 }
@@ -210,6 +218,12 @@ void ForwardRender::TakeInput(unsigned int keyPress)
 		if (keyPress == 39)
 			it->ChangeWorldPosition(0.0f, 1.0f, 0.0f);
 	}
+
+	if (keyPress == 38)
+		ChangeCameraPosition(0.0f, -1.0f, 0.0f);
+
+	if (keyPress == 40)
+		ChangeCameraPosition(0.0f, 1.0f, 0.0f);
 }
 
 
@@ -231,10 +245,31 @@ void ForwardRender::SetUpTargets()
 
 
 
+void ForwardRender::UpdateViewProj()
+{
+	
+	if (posDirty)
+	{
+		glm::mat4 Projection = glm::perspective(glm::radians(8.0f), 4.0f / 4.0f, 0.1f, 105.f);
+		glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(mXPosition, 0.0f, mZPosition));
+		for (auto it : mDrawQueue)
+		{
+			it->setView(View);
+			it->setProj(Projection);
+		}	
+		posDirty = false;
+	}
+	
+}
+
+
+
+
+
 
 void ForwardRender::DoRender()
 {
-
+	UpdateViewProj();
 	SetUpTargets();
 
 	mRenderTarget->getVulkanImage()->ClearImage(1.0f);

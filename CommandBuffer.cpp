@@ -331,11 +331,6 @@ void CommandBuffer::SetUpMVP(VulkanPipeline& thePipeline, glm::mat4 & MVP)
 {
 
 	float colour[] = { 1.0f, 0.0f, 0.0f, 1.0f };
-	
-	// glm perspecgive matrices will transform into NDC of z: -1(near) to +1(far), we need 0 to 1;
-	//glm::mat4 correction = glm::scale(glm::mat4(), glm::vec3(1.0f, 1.0f, 0.5f));
-	//correction = glm::translate(correction, glm::vec3(0.0f, 0.0f, 1.0f));
-	//correction = glm::inverse(correction);
 
 	vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT , 0, sizeof(colour), colour);
 	vkCmdPushConstants(GetVkCommandBuffer(), thePipeline.getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 16, 64, &MVP[0]);

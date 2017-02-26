@@ -7,7 +7,7 @@
 
 
 #include <glm/mat4x4.hpp> // glm::mat4
- 
+
 class VulkanImage;
 class VulkanRenderPass;
 class VulkanPipeline;
@@ -89,6 +89,8 @@ public:
 		posDirty = true;
 	}
 
+	void setView(glm::mat4 view){ mView = view; posDirty = true; }
+	void setProj(glm::mat4 proj){ mProj = proj; posDirty = true; }
 	void UpdateMVP();
 	void UpdateRelModelMat();
 private:
@@ -103,6 +105,8 @@ private:
 	VertexDraw mVertexDraw;
 	IndexDraw mIndexDraw;
 
+	glm::mat4 mView;
+	glm::mat4 mProj;
 	glm::mat4 MVP;
 	float mZPosition;
 	float mXPosition;

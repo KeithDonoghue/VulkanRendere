@@ -30,6 +30,14 @@ public:
 	void SetUpTargets();
 	void DoRender();
 
+	void ChangeCameraPosition(float deltaZ, float deltaX, float deltaR){
+		mZPosition += deltaZ;
+		mXPosition += deltaX;
+		mRotation += deltaR;
+		posDirty = true;
+	}
+
+	void UpdateViewProj();
 
 private:
 	MyEngine * mRenderEngine;
@@ -52,6 +60,10 @@ private:
 	std::shared_ptr<RenderInstance> mRenderInstance, mRenderInstance2;
 
 	std::vector<std::shared_ptr<RenderInstance>> mDrawQueue;
+	float mZPosition;
+	float mXPosition;
+	float mRotation;
+	bool posDirty;
 };
 
 #endif // FORWARD_RENDER_HPP

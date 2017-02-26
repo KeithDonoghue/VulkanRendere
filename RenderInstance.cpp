@@ -112,16 +112,13 @@ void RenderInstance::SetDraw(IndexDraw drawInfo)
 void RenderInstance::UpdateMVP()
 {
 
-	if (posDirty || 1)
+	if (posDirty )
 	{
 		posDirty = false;
-		glm::mat4 Projection = glm::perspective(glm::radians(8.0f), 4.0f / 4.0f, 0.1f, 105.f);
-		glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-		//View = glm::rotate(View, glm::radians(15.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 		glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
 		Model = glm::translate(Model, glm::vec3(0.0f, mXPosition, mZPosition));
 		Model = glm::rotate(Model, glm::radians(mRotation), glm::vec3(0.0f, 1.0f, 0.0f));
-		MVP = Projection * View * Model;
+		MVP = mProj * mView * Model;
 
 		CommandBuffer * currentCommandBuffer = mDevice.GetCommandPool().GetCurrentCommandBuffer();
 		currentCommandBuffer->SetUpMVP(*mPipeline, MVP);
